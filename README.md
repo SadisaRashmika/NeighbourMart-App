@@ -4,12 +4,12 @@ Local Grocery Pre-order and Pickup App (NeighbourMart) for SLIIT ITPM/HCI projec
 ## Projects
 
 - `client/` - Expo React Native mobile application
-- `backend/` - Express, TypeScript, and MongoDB API
+- `server/` - Express, TypeScript, and MongoDB API
 
 ## Backend setup
 
 ```powershell
-cd backend
+cd server
 npm install
 copy .env.example .env
 npm run dev

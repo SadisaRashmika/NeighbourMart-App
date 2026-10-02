@@ -1,6 +1,8 @@
-# NeighbourMart backend
+# NeighbourMart server
 
 Express and MongoDB API for the NeighbourMart Expo client.
+
+The source is organized by responsibility: configuration, models, controllers, routes, middleware, services, and utilities.
 
 ## Setup
 
