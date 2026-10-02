@@ -5,3 +5,7 @@ export type AuthUser = {
   name: string;
   role: UserRole;
 };
+
+export type LoginInput = {
+  mobileNumber: string;
+};

@@ -1,9 +1,8 @@
 import { Router } from 'express';
+import { listUsers } from '../controllers/userController.js';
 
 const router = Router();
 
-router.get('/', (_request, response) => {
-  response.status(501).json({ message: 'User endpoints are not implemented yet' });
-});
+router.get('/', listUsers);
 
 export default router;
