@@ -27,8 +27,14 @@ app.use((_request, response) => {
 
 async function startServer() {
   if (mongodbUri) {
-    await mongoose.connect(mongodbUri);
-    console.log('Connected to MongoDB Atlas successfully!');
+    try {
+      await mongoose.connect(mongodbUri, { serverSelectionTimeoutMS: 10000 });
+      console.log('Connected to MongoDB Atlas successfully!');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('MongoDB connection failed. Check Atlas Network Access, cluster status, and credentials.');
+      console.error(message);
+    }
   } else {
     console.warn('MONGO_URI is not set; starting without a database connection');
   }
