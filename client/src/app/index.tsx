@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const [mobileNumber, setMobileNumber] = useState('77 123 4567');
-  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -130,19 +129,17 @@ export default function LoginScreen() {
         {/* DEVELOPMENT / TESTING NAVIGATION BUTTONS */}
         <View style={styles.devContainer}>
           <Text style={styles.devTitle}>Development Navigation Helpers</Text>
-          <TouchableOpacity 
-            style={styles.devButtonCustomer} 
-            onPress={() => router.push('/customer-dashboard')}
-          >
-            <Text style={styles.devButtonText}>Go to Customer Dashboard (104)</Text>
-          </TouchableOpacity>
+          <Link href="/customer-dashboard" asChild>
+            <TouchableOpacity style={styles.devButtonCustomer}>
+              <Text style={styles.devButtonText}>Go to Customer Dashboard (104)</Text>
+            </TouchableOpacity>
+          </Link>
 
-          <TouchableOpacity 
-            style={styles.devButtonShop} 
-            onPress={() => router.push('/shop-dashboard')}
-          >
-            <Text style={styles.devButtonText}>Go to Shop Owner Dashboard (111)</Text>
-          </TouchableOpacity>
+          <Link href="/shop-dashboard" asChild>
+            <TouchableOpacity style={styles.devButtonShop}>
+              <Text style={styles.devButtonText}>Go to Shop Owner Dashboard (111)</Text>
+            </TouchableOpacity>
+          </Link>
         </View>
 
       </ScrollView>

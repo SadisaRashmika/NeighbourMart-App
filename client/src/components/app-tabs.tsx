@@ -1,32 +1,22 @@
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useColorScheme } from 'react-native';
-
-import { Colors } from '@/constants/theme';
+import { Tabs } from 'expo-router';
 
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-
   return (
-    <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
-      <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
-        />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
-        />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs>
+      <Tabs.Screen name="index" options={{ title: 'Home' }} />
+      <Tabs.Screen name="explore" options={{ title: 'Explore' }} />
+      <Tabs.Screen name="customer-dashboard" options={{ href: null }} />
+      <Tabs.Screen name="shop-dashboard" options={{ href: null }} />
+      <Tabs.Screen name="customer-signup" options={{ href: null }} />
+      <Tabs.Screen name="shop-signup" options={{ href: null }} />
+      <Tabs.Screen name="product-details" options={{ href: null }} />
+      <Tabs.Screen name="cart" options={{ href: null }} />
+      <Tabs.Screen name="substitution" options={{ href: null }} />
+      <Tabs.Screen name="pickup-time" options={{ href: null }} />
+      <Tabs.Screen name="order-tracking" options={{ href: null }} />
+      <Tabs.Screen name="customer-settings" options={{ href: null }} />
+      <Tabs.Screen name="shop-stock" options={{ href: null }} />
+      <Tabs.Screen name="shop-orders" options={{ href: null }} />
+    </Tabs>
   );
 }
