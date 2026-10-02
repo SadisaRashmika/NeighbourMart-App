@@ -1,6 +1,5 @@
-import React from 'react';
-import { DashboardTabs } from '@/components/dashboard-tabs';
+import { RoutePlaceholder } from '@/components/route-placeholder';
 
 export default function ShopDashboard() {
-  return <DashboardTabs role="shop" />;
+  return <RoutePlaceholder code="111" title="Shop Owner Dashboard" />;
 }
