@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { UserModel } from '../models/User.js';
 
 export async function connectDatabase(mongoUri: string | undefined) {
   if (!mongoUri) {
@@ -8,6 +9,7 @@ export async function connectDatabase(mongoUri: string | undefined) {
 
   try {
     await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 10000 });
+    await UserModel.syncIndexes();
     console.log('Connected to MongoDB Atlas successfully!');
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
