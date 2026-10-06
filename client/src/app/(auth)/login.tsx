@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AuthDivider } from '@/components/auth/AuthDivider';
-import { AuthHeader } from '@/components/auth/AuthHeader';
 import { CommunityBanner } from '@/components/auth/CommunityBanner';
+import { AuthScreen } from '@/components/auth/AuthScreen';
 import { SocialButtons } from '@/components/auth/SocialButtons';
 import { Button } from '@/components/common/Button';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
@@ -41,8 +41,8 @@ export default function Login() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <AuthHeader />
+    <AuthScreen>
+      <View style={styles.container}>
       <View style={styles.badge}><Ionicons color="#138A43" name="pricetag-outline" size={14} /><Text style={styles.badgeText}>Fresh & Local</Text></View>
       <Text style={styles.title}>Welcome Neighbor!</Text>
       <Text style={styles.subtitle}>Fresh local harvest & doorstep pickup from verified neighborhood grocers.</Text>
@@ -67,7 +67,8 @@ export default function Login() {
       <AuthDivider />
       <SocialButtons />
       <CommunityBanner />
-    </ScrollView>
+      </View>
+    </AuthScreen>
   );
 }
 

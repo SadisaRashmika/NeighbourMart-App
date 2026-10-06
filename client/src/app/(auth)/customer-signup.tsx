@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AuthDivider } from '@/components/auth/AuthDivider';
-import { AuthHeader } from '@/components/auth/AuthHeader';
 import { CommunityBanner } from '@/components/auth/CommunityBanner';
+import { AuthScreen } from '@/components/auth/AuthScreen';
 import { SocialButtons } from '@/components/auth/SocialButtons';
 import { Button } from '@/components/common/Button';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
@@ -40,8 +40,8 @@ export default function CustomerSignup() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <AuthHeader />
+    <AuthScreen>
+      <View style={styles.container}>
       <View style={styles.badge}><Ionicons color="#138A43" name="leaf-outline" size={14} /><Text style={styles.badgeText}>Join Our Community</Text></View>
       <Text style={styles.title}>Create Your Account</Text>
       <Text style={styles.subtitle}>Join your neighborhood fresh market. Enjoy direct farm produce and 15-minute pickup.</Text>
@@ -54,7 +54,8 @@ export default function CustomerSignup() {
       <Button disabled={isLoading} label={isLoading ? 'Sending code...' : 'Create Account  →'} onPress={startRegistration} />
       <Text style={styles.terms}>By continuing, you agree to our <Text style={styles.underlined}>Terms of Freshness</Text> & <Text style={styles.underlined}>Privacy Standards</Text>.</Text>
       <AuthDivider /><SocialButtons /><CommunityBanner />
-    </ScrollView>
+      </View>
+    </AuthScreen>
   );
 }
 

@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AuthHeader } from '@/components/auth/AuthHeader';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AuthScreen } from '@/components/auth/AuthScreen';
 import { Button } from '@/components/common/Button';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { Input } from '@/components/common/Input';
@@ -35,8 +35,8 @@ export default function VerifyEmail() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <AuthHeader />
+    <AuthScreen>
+      <View style={styles.container}>
       <View style={styles.badge}><Ionicons color="#138A43" name="mail-outline" size={14} /><Text style={styles.badgeText}>Check Your Inbox</Text></View>
       <Text style={styles.title}>Confirm Your Email</Text>
       <Text style={styles.subtitle}>We sent a 6-digit code to {email}. Enter it here to verify your Gmail address.</Text>
@@ -45,7 +45,8 @@ export default function VerifyEmail() {
       {error ? <ErrorMessage message={error} /> : null}
       <Button disabled={isLoading} label={isLoading ? 'Checking code...' : 'Confirm Email  →'} onPress={confirmCode} />
       <TouchableOpacity onPress={() => router.replace('/(auth)/customer-signup')}><Text style={styles.link}>Change email address</Text></TouchableOpacity>
-    </ScrollView>
+      </View>
+    </AuthScreen>
   );
 }
 

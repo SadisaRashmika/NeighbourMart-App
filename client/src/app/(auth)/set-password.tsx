@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { AuthHeader } from '@/components/auth/AuthHeader';
+import { StyleSheet, Text, View } from 'react-native';
+import { AuthScreen } from '@/components/auth/AuthScreen';
 import { Button } from '@/components/common/Button';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { Input } from '@/components/common/Input';
@@ -44,8 +44,8 @@ export default function SetPassword() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <AuthHeader />
+    <AuthScreen>
+      <View style={styles.container}>
       <View style={styles.badge}><Ionicons color="#138A43" name="lock-closed-outline" size={14} /><Text style={styles.badgeText}>Email Confirmed</Text></View>
       <Text style={styles.title}>Set Your Password</Text>
       <Text style={styles.subtitle}>Your email is verified. Create a password to securely access your NeighbourMart account.</Text>
@@ -53,7 +53,8 @@ export default function SetPassword() {
       <Input autoCapitalize="none" label="CONFIRM PASSWORD" onChangeText={setConfirmPassword} placeholder="Repeat your password" secureTextEntry value={confirmPassword} />
       {error ? <ErrorMessage message={error} /> : null}
       <Button disabled={isLoading} label={isLoading ? 'Creating account...' : 'Finish Account  →'} onPress={finishRegistration} />
-    </ScrollView>
+      </View>
+    </AuthScreen>
   );
 }
 
