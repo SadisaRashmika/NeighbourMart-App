@@ -5,6 +5,7 @@ export type AuthUser = {
   name: string;
   email: string;
   location: string;
+  avatarUrl?: string;
   role: UserRole;
 };
 

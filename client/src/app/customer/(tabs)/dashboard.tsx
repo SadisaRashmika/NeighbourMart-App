@@ -7,7 +7,7 @@ export default function CustomerDashboard() {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <View style={styles.fixedHeader}>
-        <RoleHeader role="customer" location="Peradeniya Rd Shop, Kandy" />
+        <RoleHeader role="customer" location="Add your neighborhood" />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.shopCard}>

@@ -16,10 +16,10 @@ copy .env.example .env
 npm start
 ```
 
-The client is compatible with Expo Go. When testing on a physical phone, replace `localhost` in `client/.env` with the computer's LAN IP address, for example:
+The client is compatible with Expo Go. For a shared team setup, set `EXPO_PUBLIC_API_URL` to the permanent HTTPS URL of the deployed server:
 
 ```env
-EXPO_PUBLIC_API_URL=http://192.168.1.10:5000
+EXPO_PUBLIC_API_URL=https://your-neighbourmart-api.onrender.com
 ```
 
 ## Server setup
@@ -32,6 +32,8 @@ npm run dev
 ```
 
 Set `MONGO_URI` in `server/.env`. The server defaults to port `5000`, and its health endpoint is `GET http://localhost:5000/api/health`.
+
+For a permanent public backend, deploy using the root `render.yaml` Blueprint. After deployment, all collaborators use the same Render URL and no longer change IP addresses when switching Wi-Fi.
 
 ## Validation
 
