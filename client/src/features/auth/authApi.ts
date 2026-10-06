@@ -34,3 +34,25 @@ export function setPassword(input: { email: string; password: string; verificati
     method: 'POST',
   });
 }
+
+export function updateProfile(token: string, input: { name: string; location: string; avatarUrl?: string }) {
+  return apiRequest<{ user: AuthUser }>('/api/users/me', {
+    body: JSON.stringify(input),
+    headers: { Authorization: `Bearer ${token}` },
+    method: 'PUT',
+  });
+}
+
+export function requestPasswordChangeCode(token: string) {
+  return apiRequest<{ email: string; developmentCode?: string }>('/api/auth/request-password-change', {
+    headers: { Authorization: `Bearer ${token}` },
+    method: 'POST',
+  });
+}
+
+export function resetPassword(input: { email: string; code: string; password: string }) {
+  return apiRequest<{ message: string }>('/api/auth/reset-password', {
+    body: JSON.stringify(input),
+    method: 'POST',
+  });
+}

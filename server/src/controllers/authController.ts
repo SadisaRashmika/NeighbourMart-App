@@ -3,11 +3,20 @@ import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { environment } from '../config/environment.js';
+import { isDatabaseConnected } from '../config/database.js';
 import { UserModel } from '../models/User.js';
-import { findUserByEmail, findUserByEmailWithSecrets, findUserById } from '../services/authService.js';
+import { findUserByEmail, findUserByEmailWithSecrets, findUserById, findUserByIdWithSecrets } from '../services/authService.js';
 import { sendVerificationCode } from '../services/emailService.js';
 
 const verificationCodeLifetime = 10 * 60 * 1000;
+
+function requireDatabase(response: Parameters<RequestHandler>[1]) {
+  if (!isDatabaseConnected()) {
+    response.status(503).json({ message: 'Database unavailable. Restart the server and try again.' });
+    return false;
+  }
+  return true;
+}
 
 function hashValue(value: string) {
   return crypto.createHash('sha256').update(value).digest('hex');
@@ -21,11 +30,12 @@ function createToken(userId: string, purpose: 'session' | 'email-verification') 
   return jwt.sign({ purpose }, environment.jwtSecret, { subject: userId, expiresIn: purpose === 'session' ? '7d' : '15m' });
 }
 
-function publicUser(user: { _id: unknown; name: string; email: string; role: string; location: string }) {
-  return { id: String(user._id), name: user.name, email: user.email, role: user.role, location: user.location };
+function publicUser(user: { _id: unknown; name: string; email: string; role: string; location: string; avatarUrl?: string | null }) {
+  return { id: String(user._id), name: user.name, email: user.email, role: user.role, location: user.location, avatarUrl: user.avatarUrl };
 }
 
 export const getCurrentUser: RequestHandler = (_request, response) => {
+  if (!requireDatabase(response)) return;
   findUserById(response.locals.userId)
     .then((user) => {
       if (!user) {
@@ -38,6 +48,7 @@ export const getCurrentUser: RequestHandler = (_request, response) => {
 };
 
 export const login: RequestHandler = async (request, response) => {
+  if (!requireDatabase(response)) return;
   const email = String(request.body.email ?? '').trim().toLowerCase();
   const password = String(request.body.password ?? '');
   const user = await findUserByEmailWithSecrets(email);
@@ -56,6 +67,7 @@ export const login: RequestHandler = async (request, response) => {
 };
 
 export const registerCustomer: RequestHandler = async (request, response) => {
+  if (!requireDatabase(response)) return;
   const name = String(request.body.name ?? '').trim();
   const email = String(request.body.email ?? '').trim().toLowerCase();
   const location = String(request.body.location ?? '').trim();
@@ -109,6 +121,7 @@ export const registerCustomer: RequestHandler = async (request, response) => {
 };
 
 export const verifyEmail: RequestHandler = async (request, response) => {
+  if (!requireDatabase(response)) return;
   const email = String(request.body.email ?? '').trim().toLowerCase();
   const code = String(request.body.code ?? '').trim();
   const user = await findUserByEmailWithSecrets(email);
@@ -127,6 +140,7 @@ export const verifyEmail: RequestHandler = async (request, response) => {
 };
 
 export const setPassword: RequestHandler = async (request, response) => {
+  if (!requireDatabase(response)) return;
   const email = String(request.body.email ?? '').trim().toLowerCase();
   const password = String(request.body.password ?? '');
   const verificationToken = String(request.body.verificationToken ?? '');
@@ -158,6 +172,55 @@ export const setPassword: RequestHandler = async (request, response) => {
   user.passwordHash = await bcrypt.hash(password, 12);
   await user.save();
   response.json({ token: createToken(String(user._id), 'session'), user: publicUser(user) });
+};
+
+export const requestPasswordChangeCode: RequestHandler = async (_request, response) => {
+  if (!requireDatabase(response)) return;
+  const user = await findUserByIdWithSecrets(response.locals.userId);
+  if (!user) {
+    response.status(404).json({ message: 'User not found' });
+    return;
+  }
+
+  const code = createCode();
+  user.passwordResetCodeHash = hashValue(code);
+  user.passwordResetCodeExpiresAt = new Date(Date.now() + verificationCodeLifetime);
+  await user.save();
+
+  try {
+    await sendVerificationCode(user.email, code);
+  } catch (error) {
+    console.error('Password reset email could not be sent', error);
+    if (process.env.NODE_ENV === 'production') {
+      response.status(502).json({ message: 'Could not send the password reset email.' });
+      return;
+    }
+  }
+
+  response.json({ message: 'Password reset code sent', email: user.email, ...(process.env.NODE_ENV === 'production' ? {} : { developmentCode: code }) });
+};
+
+export const resetPassword: RequestHandler = async (request, response) => {
+  if (!requireDatabase(response)) return;
+  const email = String(request.body.email ?? '').trim().toLowerCase();
+  const code = String(request.body.code ?? '').trim();
+  const password = String(request.body.password ?? '');
+  const user = await findUserByEmailWithSecrets(email);
+
+  if (password.length < 8) {
+    response.status(400).json({ message: 'Password must be at least 8 characters' });
+    return;
+  }
+  if (!user || !user.passwordResetCodeHash || !user.passwordResetCodeExpiresAt || user.passwordResetCodeExpiresAt < new Date() || hashValue(code) !== user.passwordResetCodeHash) {
+    response.status(400).json({ message: 'Invalid or expired password code' });
+    return;
+  }
+
+  user.passwordHash = await bcrypt.hash(password, 12);
+  user.passwordResetCodeHash = undefined;
+  user.passwordResetCodeExpiresAt = undefined;
+  await user.save();
+  response.json({ message: 'Password updated successfully' });
 };
 
 export const registerShopOwner: RequestHandler = (_request, response) => {

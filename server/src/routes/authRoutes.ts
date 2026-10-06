@@ -4,6 +4,8 @@ import {
   login,
   registerCustomer,
   registerShopOwner,
+  requestPasswordChangeCode,
+  resetPassword,
   setPassword,
   verifyEmail,
 } from '../controllers/authController.js';
@@ -17,5 +19,7 @@ router.post('/register/customer', registerCustomer);
 router.post('/register/shop', registerShopOwner);
 router.post('/verify-email', verifyEmail);
 router.post('/set-password', setPassword);
+router.post('/request-password-change', authMiddleware, requestPasswordChangeCode);
+router.post('/reset-password', resetPassword);
 
 export default router;
