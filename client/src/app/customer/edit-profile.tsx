@@ -13,6 +13,7 @@ export default function EditProfile() {
   const { token, user, setUser } = useAuth();
   const [name, setName] = useState(user?.name ?? '');
   const [location, setLocation] = useState(user?.location ?? '');
+  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber ?? '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? '');
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -40,14 +41,14 @@ export default function EditProfile() {
       return;
     }
     if (!name.trim() || !location.trim()) {
-      setError('Name and location are required.');
+      setError('Name and pickup location are required.');
       return;
     }
 
     setError('');
     setIsSaving(true);
     try {
-      const result = await updateProfile(token, { name: name.trim(), location: location.trim(), avatarUrl });
+      const result = await updateProfile(token, { name: name.trim(), location: location.trim(), avatarUrl, phoneNumber: phoneNumber.trim(), pickupTime: user?.pickupTime, pickupInstructions: user?.pickupInstructions, allowCalls: user?.allowCalls });
       setUser(result.user);
       router.back();
     } catch (requestError) {
@@ -69,7 +70,8 @@ export default function EditProfile() {
         <Input autoCapitalize="words" label="FULL NAME" onChangeText={setName} value={name} />
         <Input editable={false} label="EMAIL ADDRESS" value={user?.email ?? ''} style={styles.lockedInput} />
         <Text style={styles.lockedHint}>Your Gmail address is verified and cannot be changed here.</Text>
-        <Input autoCapitalize="words" label="NEIGHBORHOOD / DELIVERY AREA" onChangeText={setLocation} value={location} />
+        <Input autoCapitalize="words" label="PICKUP LOCATION" onChangeText={setLocation} placeholder="Shop or area where you collect orders" value={location} />
+        <Input keyboardType="phone-pad" label="PHONE NUMBER" onChangeText={setPhoneNumber} placeholder="Optional contact number" value={phoneNumber} />
         {error ? <ErrorMessage message={error} /> : null}
         <Button disabled={isSaving} label={isSaving ? 'Saving...' : 'Save Profile'} onPress={saveProfile} />
       </ScrollView>

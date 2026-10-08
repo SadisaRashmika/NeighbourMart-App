@@ -2,8 +2,10 @@ import type { RequestHandler } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import { environment } from '../config/environment.js';
 import { isDatabaseConnected } from '../config/database.js';
+import { ShopModel } from '../models/Shop.js';
 import { UserModel } from '../models/User.js';
 import { findUserByEmail, findUserByEmailWithSecrets, findUserById, findUserByIdWithSecrets } from '../services/authService.js';
 import { sendVerificationCode } from '../services/emailService.js';
@@ -30,8 +32,8 @@ function createToken(userId: string, purpose: 'session' | 'email-verification') 
   return jwt.sign({ purpose }, environment.jwtSecret, { subject: userId, expiresIn: purpose === 'session' ? '7d' : '15m' });
 }
 
-function publicUser(user: { _id: unknown; name: string; email: string; role: string; location: string; avatarUrl?: string | null }) {
-  return { id: String(user._id), name: user.name, email: user.email, role: user.role, location: user.location, avatarUrl: user.avatarUrl };
+function publicUser(user: { _id: unknown; name: string; email: string; role: string; location: string; avatarUrl?: string | null; phoneNumber?: string | null; pickupTime?: string | null; pickupInstructions?: string | null; allowCalls?: boolean }) {
+  return { id: String(user._id), name: user.name, email: user.email, role: user.role, location: user.location, avatarUrl: user.avatarUrl, phoneNumber: user.phoneNumber, pickupTime: user.pickupTime, pickupInstructions: user.pickupInstructions, allowCalls: user.allowCalls };
 }
 
 export const getCurrentUser: RequestHandler = (_request, response) => {
@@ -80,7 +82,7 @@ export const registerCustomer: RequestHandler = async (request, response) => {
   const code = createCode();
   const existingUser = await findUserByEmailWithSecrets(email);
 
-  if (existingUser?.emailVerified || existingUser?.passwordHash) {
+  if (existingUser?.emailVerified || existingUser?.passwordHash || (existingUser && existingUser.role !== 'customer')) {
     response.status(409).json({ message: 'An account with this email already exists' });
     return;
   }
@@ -223,6 +225,69 @@ export const resetPassword: RequestHandler = async (request, response) => {
   response.json({ message: 'Password updated successfully' });
 };
 
-export const registerShopOwner: RequestHandler = (_request, response) => {
-  response.status(501).json({ message: 'Shop registration is not implemented yet' });
+export const registerShopOwner: RequestHandler = async (request, response) => {
+  if (!requireDatabase(response)) return;
+  const ownerName = String(request.body.ownerName ?? '').trim();
+  const email = String(request.body.email ?? '').trim().toLowerCase();
+  const storeName = String(request.body.storeName ?? '').trim();
+  const category = String(request.body.category ?? '').trim();
+  const address = String(request.body.address ?? '').trim();
+  const mobile = String(request.body.mobile ?? '').replace(/[\s-]/g, '');
+
+  if (ownerName.length < 2 || storeName.length < 2 || !category || address.length < 5 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^(?:\+94|0)7\d{8}$/.test(mobile)) {
+    response.status(400).json({ message: 'Enter valid owner, email, store, category, address, and Sri Lankan mobile details' });
+    return;
+  }
+
+  const code = createCode();
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const existingUser = await findUserByEmailWithSecrets(email).session(session);
+      if (existingUser?.emailVerified || existingUser?.passwordHash || (existingUser && existingUser.role !== 'shop')) {
+        const conflict = new Error('An account with this email already exists');
+        conflict.name = 'RegistrationConflict';
+        throw conflict;
+      }
+
+      const user = existingUser ?? new UserModel({ email, role: 'shop' });
+      user.name = ownerName;
+      user.location = address;
+      user.role = 'shop';
+      user.verificationCodeHash = hashValue(code);
+      user.verificationCodeExpiresAt = new Date(Date.now() + verificationCodeLifetime);
+      await user.save({ session });
+
+      await ShopModel.findOneAndUpdate(
+        { owner: user._id },
+        { address, category, name: storeName, owner: user._id, phone: mobile },
+        { new: true, runValidators: true, session, setDefaultsOnInsert: true, upsert: true },
+      );
+    });
+  } catch (error) {
+    if (error instanceof Error && (error.name === 'RegistrationConflict' || error.message.includes('E11000'))) {
+      response.status(409).json({ message: 'An account with this email already exists' });
+      return;
+    }
+    throw error;
+  } finally {
+    await session.endSession();
+  }
+
+  try {
+    await sendVerificationCode(email, code);
+  } catch (error) {
+    console.error('Shop verification email could not be sent', error);
+    if (process.env.NODE_ENV === 'production') {
+      response.status(502).json({ message: 'Could not send the verification email. Check the Gmail SMTP settings.' });
+      return;
+    }
+    console.warn(`Development fallback: verification code for ${email} is ${code}`);
+  }
+
+  response.status(201).json({
+    message: 'Verification code sent',
+    email,
+    ...(process.env.NODE_ENV === 'production' ? {} : { developmentCode: code }),
+  });
 };

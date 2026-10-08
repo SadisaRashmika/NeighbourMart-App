@@ -1,5 +1,5 @@
 import { apiRequest } from '@/services/api';
-import type { AuthResponse, AuthUser, LoginInput } from './authTypes';
+import type { AuthResponse, AuthUser, LoginInput, RegistrationResponse, ShopRegistrationInput } from './authTypes';
 
 export function getCurrentUser(token: string) {
   return apiRequest<{ user: AuthUser }>('/api/auth/me', {
@@ -15,7 +15,14 @@ export function login(input: LoginInput) {
 }
 
 export function registerCustomer(input: { name: string; email: string; location: string }) {
-  return apiRequest<{ email: string; message: string; developmentCode?: string }>('/api/auth/register/customer', {
+  return apiRequest<RegistrationResponse>('/api/auth/register/customer', {
+    body: JSON.stringify(input),
+    method: 'POST',
+  });
+}
+
+export function registerShopOwner(input: ShopRegistrationInput) {
+  return apiRequest<RegistrationResponse>('/api/auth/register/shop', {
     body: JSON.stringify(input),
     method: 'POST',
   });
@@ -35,11 +42,18 @@ export function setPassword(input: { email: string; password: string; verificati
   });
 }
 
-export function updateProfile(token: string, input: { name: string; location: string; avatarUrl?: string }) {
+export function updateProfile(token: string, input: { name: string; location: string; avatarUrl?: string; phoneNumber?: string; pickupTime?: string; pickupInstructions?: string; allowCalls?: boolean }) {
   return apiRequest<{ user: AuthUser }>('/api/users/me', {
     body: JSON.stringify(input),
     headers: { Authorization: `Bearer ${token}` },
     method: 'PUT',
+  });
+}
+
+export function deleteProfile(token: string) {
+  return apiRequest<{ message: string }>('/api/users/me', {
+    headers: { Authorization: `Bearer ${token}` },
+    method: 'DELETE',
   });
 }
 

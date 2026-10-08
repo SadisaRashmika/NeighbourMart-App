@@ -1,11 +1,11 @@
 import { apiRequest } from '@/services/api';
-import type { OrderStatus, ShopOrder, ShopProfile, StockInput, StockItem } from './shopTypes';
+import type { OrderStatus, ShopOrder, ShopProfile, ShopProfileUpdate, StockInput, StockItem } from './shopTypes';
 
 const json = (method: string, body: unknown) => ({ method, body: JSON.stringify(body) });
 
 // Shop profile (dashboard)
 export const getMyShop = () => apiRequest<ShopProfile>('/api/shops/me');
-export const updateMyShop = (patch: Partial<ShopProfile>) => apiRequest<ShopProfile>('/api/shops/me', json('PATCH', patch));
+export const updateMyShop = (patch: ShopProfileUpdate) => apiRequest<ShopProfile>('/api/shops/me', json('PATCH', patch));
 
 // Stock: CRUD
 export const getStockItems = () => apiRequest<StockItem[]>('/api/products/shop');
