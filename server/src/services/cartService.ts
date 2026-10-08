@@ -37,12 +37,19 @@ export async function readCart(customer: string) {
   const shop = items.length
     ? await ShopModel.findById(items[0].product.shopId)
     : null;
-  const subtotal = money(items.reduce((sum, i) => sum + i.quantity * i.product.price, 0));
+  const subtotal = money(
+    items.reduce((sum, i) => sum + i.quantity * i.product.price, 0),
+  );
   const packingFee = shop?.packingFee ?? 0;
-  const communityDiscount = Math.min(subtotal + packingFee, shop?.communityDiscount ?? 0);
+  const communityDiscount = Math.min(
+    subtotal + packingFee,
+    shop?.communityDiscount ?? 0,
+  );
   return {
     items,
-    subtotal, packingFee, communityDiscount,
+    subtotal,
+    packingFee,
+    communityDiscount,
     total: money(subtotal + packingFee - communityDiscount),
     shop: shop ? { id: shop.id, name: shop.name, address: shop.address } : null,
   };
@@ -187,8 +194,19 @@ export async function checkout(customer: string, body: any) {
             pickupSlot: slot._id,
             items,
             packingFee: shop.packingFee ?? 0,
-            communityDiscount: Math.min(items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0) + (shop.packingFee ?? 0), shop.communityDiscount ?? 0),
-            total: money(Math.max(0, items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0) + (shop.packingFee ?? 0) - (shop.communityDiscount ?? 0))),
+            communityDiscount: Math.min(
+              items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0) +
+                (shop.packingFee ?? 0),
+              shop.communityDiscount ?? 0,
+            ),
+            total: money(
+              Math.max(
+                0,
+                items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0) +
+                  (shop.packingFee ?? 0) -
+                  (shop.communityDiscount ?? 0),
+              ),
+            ),
             checkoutKey: body.checkoutKey,
             pickupNote: body.pickupNote,
             paymentMethod: body.paymentMethod,

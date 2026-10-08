@@ -23,9 +23,9 @@ npm start
 
 Local ignored `.env` files are configured. The server uses database `NeighbourMart`. The client URL is `http://192.168.1.137:5000`, the laptop's detected LAN IP during implementation. Update it if the IP changes. Phone and computer must share a network; allow Node through the firewall for your private network. Open the Expo QR code on the phone. Check `http://192.168.1.137:5000/api/health` if the phone cannot reach the backend.
 
-Demo customer: `0771234567`, password `NeighbourDemo2026!`. Demo credentials are for demonstration only. The seed adds named demo records without overwriting existing products or accounts. It provides three future days of slots, a basket containing milk, dhal and unavailable red onions, and available Bombay onions. Re-running the seed does not reset a customer's existing basket or overwrite stock. After checkout, add more groceries from Home to repeat the flow.
+Demo customer: `0771234567`, password `NeighbourDemo2026!`. Demo credentials are for demonstration only. The seed adds named demo records without overwriting existing products or accounts, and configures the named demo shop's packing fee and discount. It supplies slots for today and the next two days (past times are filtered out), a basket containing milk, dhal and unavailable red onions, and available Bombay onions. Re-running the seed does not reset a customer's existing basket or overwrite stock. After checkout, add more groceries from Home to repeat the flow.
 
-Sign in → Cart → Review replacement for Red Onions → approve Bombay onions (or reject/remove) → select pickup day and time → add optional pickup note → choose payment on collection → confirm → view saved orders. The initial basket totals LKR 1,590; replacing red onions with Bombay onions changes it to LKR 1,540.
+Sign in → Cart → Modify the substitution for Red Onions → approve Bombay onions (or reject/remove) → select pickup day and time → add optional pickup note → choose payment on collection → confirm → view saved orders. The initial basket subtotal is LKR 1,590, plus LKR 50 packing fee minus LKR 40 community discount, giving LKR 1,600. Replacing red onions with Bombay onions changes the total to LKR 1,550. User-edited quantities naturally change these totals.
 
 Secrets remain in ignored `.env` files; `.env.example` contains placeholders. Rotate credentials shared in chat before production use. Email configuration is retained locally, but this feature does not send emails or charge cards. Login sessions are held in memory and require sign-in after restarting the app.
 
@@ -45,7 +45,7 @@ All `/api/cart` routes require `Authorization: Bearer <JWT>` and customer role. 
 
 | Method | Endpoint | Body / purpose |
 | --- | --- | --- |
-| GET | `/api/cart` | `{ items, total, shop }` |
+| GET | `/api/cart` | `{ items, subtotal, packingFee, communityDiscount, total, shop }` |
 | PUT | `/api/cart/items/:productId` | `{ quantity }`, integer 1–99; create or update |
 | DELETE | `/api/cart/items/:productId` | Remove/reject an item |
 | DELETE | `/api/cart` | Clear basket |
@@ -60,7 +60,11 @@ Reuse the same checkout key when retrying a confirmation. Payment method is `cas
 
 Reference: Milestone 02 Appendix D.6–D.8, pages 58–60. The app follows the green/pale-purple palette, white cards, shop/address summary, quantity controls, item totals, comparison/approval decisions, pickup-day/time choices, optional vehicle note and confirmation flow.
 
-The implemented version uses text cards rather than product photography because the existing Product model has no image field. Packing fees, promotional discounts, merchant notes, counter assignments and freshness guarantees shown in the prototype are omitted because they have no configured backend source. The actual seed prices are used rather than hardcoded screenshot totals. The replacement workflow operates before checkout on the customer's basket; merchant-proposed replacements after order placement require integration with Member 4's shop order workflow and are not implemented here. A customer chooses from available alternatives in the same shop/category; no replacement is silently approved. Sinhala/Tamil translation remains outside this increment. Authentication uses passwords rather than the prototype's social login options. Supporting Home and Orders screens provide a minimal functional path and should be integrated with the respective members' final interfaces.
+The three Member 2 screens were visually revised against the PDF on 9 October 2026: compact headers, product photography, circular quantity controls, coloured substitution strips, item comparison columns, savings panel, horizontal pickup-day selection, afternoon/evening time cards, and a consistent fixed footer with real outline icons and a green active tab. The bundled reference product/shop images were extracted from the supplied Milestone 02 PDF; they are static prototype assets rather than a general product-image database. Pull-to-refresh replaces the prominent refresh buttons. Images and spacing adapt to the phone width.
+
+Shop packing fees and community discounts are stored in MongoDB and calculated by the server for both basket and confirmed order. The demo shop uses the PDF's LKR 50 fee and LKR 40 discount; unconfigured shops default to zero. Merchant notes, specific counter assignments, distance, actual packing status and freshness guarantees are not fabricated. Current dates, quantities, prices, stock and capacity come from application data rather than screenshot literals. The replacement workflow operates before checkout on the customer's basket; merchant-proposed replacements after order placement require integration with Member 4's shop order workflow and are not implemented here. A customer explicitly approves every replacement. Sinhala/Tamil translation remains outside this increment. Authentication uses passwords rather than the prototype's social login options. Supporting Home and Orders screens remain minimal integration screens for their respective members.
+
+For networks that refuse Atlas SRV DNS lookups, `MONGO_DNS_SERVERS` optionally selects DNS resolvers for the Node process only. The local configuration uses public resolvers; Windows network settings are unchanged. Leave it blank to use the system resolver.
 
 ## Verification
 
@@ -76,7 +80,7 @@ npm test
 
 Default `npm test` starts an isolated MongoDB replica set using mongodb-memory-server. Its first run downloads MongoDB, which is large on Windows. Alternatively, `npm run test:atlas` uses the configured Atlas URI, creates a unique `neighbourmart_test_<timestamp>` database, runs fixture tests only there, and drops that test database afterward. The credential must have permission to create/drop the test database. It never runs tests in the application's database.
 
-On 8 October 2026, ten integration tests passed against an isolated Atlas database: quantity/time validation; password login/token verification; simultaneous same-customer retries; cart persistence/totals; replacement approval/category rejection; atomic checkout/duplicate retry; stock-failure rollback; concurrent last-slot competition; past/wrong-shop slots; authentication/cart isolation/delete/clear. Client typecheck and lint, server typecheck/build, and Expo web and Android bundle exports passed. The running backend's health endpoint reported a connected database. These automated results do not constitute human usability testing or a physical-phone demonstration.
+On 9 October 2026, eleven integration tests passed against an isolated Atlas database, including the added packing-fee/discount agreement check. Coverage also includes quantity/time validation; password login/token verification; simultaneous same-customer retries; cart persistence/totals; replacement approval/category rejection; atomic checkout/duplicate retry; stock-failure rollback; concurrent last-slot competition; past/wrong-shop slots; authentication/cart isolation/delete/clear. Client typecheck and lint and server build passed. The preceding implementation also passed Expo web and Android bundle exports. The updated cart and footer were visually checked in the Pixel 6 emulator; the backend health endpoint reported a connected database. These results do not constitute human usability testing.
 
 ## Assignment evidence to collect
 

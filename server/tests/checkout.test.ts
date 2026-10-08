@@ -1,4 +1,5 @@
 import { after, before, beforeEach, test } from "node:test";
+import '../src/config/environment.js';
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
 import { MongoMemoryReplSet } from "mongodb-memory-server-core";
@@ -125,23 +126,55 @@ test("rejects invalid quantities and uses Colombo time for slots", () => {
     "2026-10-09T11:30:00.000Z",
   );
 });
-test('password login returns a usable token and rejects wrong passwords', async () => {
-  await UserModel.updateOne({ _id: customer }, { passwordHash: await bcrypt.hash('test-password', 4) });
-  const login = (password: string) => fetch(`${url}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mobileNumber: '0771234567', password }) });
-  assert.equal((await login('wrong')).status, 401);
-  const response = await login('test-password');
+test("password login returns a usable token and rejects wrong passwords", async () => {
+  await UserModel.updateOne(
+    { _id: customer },
+    { passwordHash: await bcrypt.hash("test-password", 4) },
+  );
+  const login = (password: string) =>
+    fetch(`${url}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mobileNumber: "0771234567", password }),
+    });
+  assert.equal((await login("wrong")).status, 401);
+  const response = await login("test-password");
   assert.equal(response.status, 200);
   const session = await response.json();
-  const me = await fetch(`${url}/api/auth/me`, { headers: { Authorization: `Bearer ${session.token}` } });
+  const me = await fetch(`${url}/api/auth/me`, {
+    headers: { Authorization: `Bearer ${session.token}` },
+  });
   assert.equal((await me.json()).id, customer);
   assert.equal(session.passwordHash, undefined);
 });
-test('same-customer concurrent checkout retries cannot create duplicate orders', async () => {
+test("same-customer concurrent checkout retries cannot create duplicate orders", async () => {
   await setCartItem(customer, product, 1);
-  const results = await Promise.all([checkout(customer, body()), checkout(customer, body())]);
+  const results = await Promise.all([
+    checkout(customer, body()),
+    checkout(customer, body()),
+  ]);
   assert.equal(results[0].id, results[1].id);
   assert.equal(await OrderModel.countDocuments(), 1);
   assert.equal((await ProductModel.findById(product))!.stock, 9);
+});
+test("packing fees and discounts agree between basket and confirmed order", async () => {
+  await ShopModel.updateOne(
+    { _id: shop },
+    { packingFee: 50, communityDiscount: 40 },
+  );
+  await setCartItem(customer, product, 2);
+  const basket = await readCart(customer);
+  assert.equal(basket.subtotal, 580);
+  assert.equal(basket.total, 590);
+  const result = await checkout(customer, {
+    ...body(),
+    packingFee: 0,
+    communityDiscount: 999,
+  });
+  assert.equal(result.total, basket.total);
+  const order = await OrderModel.findById(result.id);
+  assert.equal(order!.packingFee, 50);
+  assert.equal(order!.communityDiscount, 40);
 });
 test("cart quantity edits persist and total is calculated from product prices", async () => {
   await setCartItem(customer, product, 2);

@@ -89,7 +89,7 @@ async function seed() {
     },
     { upsert: true },
   );
-  for (let offset = 1; offset <= 3; offset++) {
+  for (let offset = 0; offset < 3; offset++) {
     const localDate = new Date(Date.now() + 330 * 60000 + offset * 86400000)
       .toISOString()
       .slice(0, 10);
