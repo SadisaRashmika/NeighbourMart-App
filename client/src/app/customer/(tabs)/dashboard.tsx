@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RoleHeader } from '@/components/common/RoleHeader';
+import { PickupReminderCard } from '@/components/customer/PickupReminderCard';
 
 export default function CustomerDashboard() {
   return (
@@ -10,6 +11,7 @@ export default function CustomerDashboard() {
         <RoleHeader role="customer" location="Add your neighborhood" />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
+        <PickupReminderCard />
         <View style={styles.shopCard}>
         <View style={styles.shopHeader}>
           <View style={styles.readyDot} />

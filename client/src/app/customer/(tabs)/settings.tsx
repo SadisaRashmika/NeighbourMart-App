@@ -142,7 +142,7 @@ export default function CustomerSettings() {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.header}><TouchableOpacity onPress={() => router.back()}><Ionicons color="#172B24" name="arrow-back" size={21} /></TouchableOpacity><Text style={styles.headerTitle}>Settings</Text><TouchableOpacity><Ionicons color="#667085" name="help-circle-outline" size={21} /></TouchableOpacity></View>
+      <View style={styles.header}><TouchableOpacity onPress={() => router.back()}><Ionicons color="#172B24" name="arrow-back" size={21} /></TouchableOpacity><Text style={styles.headerTitle}>Settings</Text><TouchableOpacity accessibilityLabel="Open app introduction" onPress={() => router.push('/intro')}><Ionicons color="#667085" name="help-circle-outline" size={21} /></TouchableOpacity></View>
 
       {error ? <TouchableOpacity onPress={() => Alert.alert('Profile unavailable', error)} style={styles.errorBanner}><Ionicons color="#B42318" name="warning-outline" size={17} /><Text style={styles.errorText}>Could not refresh profile data</Text></TouchableOpacity> : null}
 
