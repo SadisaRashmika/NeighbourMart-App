@@ -26,7 +26,7 @@ function SettingRow({ icon, label, value, action, onPress }: { icon: keyof typeo
 }
 
 export default function CustomerSettings() {
-  const { token, user: cachedUser, setToken, setUser } = useAuth();
+  const { token, user: cachedUser, setUser, logout: clearSession } = useAuth();
   const [user, setCurrentUser] = useState<AuthUser | null>(cachedUser);
   const [isLoading, setIsLoading] = useState(Boolean(token));
   const [error, setError] = useState('');
@@ -60,9 +60,8 @@ export default function CustomerSettings() {
     };
   }, [token, setUser]);
 
-  function logout() {
-    setToken(null);
-    setUser(null);
+  async function logout() {
+    await clearSession();
     router.replace('/(auth)/login');
   }
 

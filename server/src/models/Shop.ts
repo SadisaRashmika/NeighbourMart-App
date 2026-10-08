@@ -2,10 +2,11 @@ import { model, Schema, type InferSchemaType } from 'mongoose';
 
 const shopSchema = new Schema(
   {
-    owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    owner: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     name: { type: String, required: true, trim: true },
     category: { type: String, trim: true },
     address: { type: String, required: true, trim: true },
+    phone: { type: String, trim: true },
     acceptingOrders: { type: Boolean, default: true },
   },
   { timestamps: true }
