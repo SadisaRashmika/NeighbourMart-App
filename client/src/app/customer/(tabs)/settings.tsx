@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getCurrentUser } from '@/features/auth/authApi';
+import { getCurrentUser, updateProfile } from '@/features/auth/authApi';
 import { useAuth } from '@/features/auth/useAuth';
 import type { AuthUser } from '@/features/auth/authTypes';
 
@@ -33,11 +34,16 @@ export default function CustomerSettings() {
   const [notifications, setNotifications] = useState(true);
   const [substitutions, setSubstitutions] = useState(true);
   const [deals, setDeals] = useState(false);
+  const [isPreferenceModalVisible, setIsPreferenceModalVisible] = useState(false);
+  const [preferenceMode, setPreferenceMode] = useState<'time' | 'instructions'>('time');
+  const [timeDraft, setTimeDraft] = useState(new Date());
+  const [instructionsDraft, setInstructionsDraft] = useState('');
+  const [isNativeTimePickerVisible, setIsNativeTimePickerVisible] = useState(false);
+  const [isSavingPreference, setIsSavingPreference] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
     if (!token) {
-      setIsLoading(false);
       return;
     }
 
@@ -66,6 +72,69 @@ export default function CustomerSettings() {
     router.replace('/(auth)/login');
   }
 
+  function parsePickupTime(value?: string) {
+    const match = value?.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (!match) return new Date();
+    let hour = Number(match[1]);
+    const minute = Number(match[2]);
+    const meridiem = match[3]?.toUpperCase();
+    if (meridiem === 'PM' && hour < 12) hour += 12;
+    if (meridiem === 'AM' && hour === 12) hour = 0;
+    const nextDate = new Date();
+    nextDate.setHours(hour, minute, 0, 0);
+    return nextDate;
+  }
+
+  function formatPickupTime(value: Date) {
+    return value.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function openTimeEditor() {
+    setTimeDraft(parsePickupTime(user?.pickupTime));
+    if (Platform.OS === 'android') {
+      setIsNativeTimePickerVisible(true);
+    } else {
+      setPreferenceMode('time');
+      setIsPreferenceModalVisible(true);
+    }
+  }
+
+  function openInstructionsEditor() {
+    setInstructionsDraft(user?.pickupInstructions ?? '');
+    setPreferenceMode('instructions');
+    setIsPreferenceModalVisible(true);
+  }
+
+  function handleTimeChange(event: DateTimePickerEvent, selectedDate?: Date) {
+    if (Platform.OS === 'android') setIsNativeTimePickerVisible(false);
+    if (!selectedDate || event.type === 'dismissed') return;
+    setTimeDraft(selectedDate);
+    if (Platform.OS === 'android') void savePreferences({ pickupTime: formatPickupTime(selectedDate) });
+  }
+
+  async function savePreferences(patch: { pickupTime?: string; pickupInstructions?: string; allowCalls?: boolean }) {
+    if (!token || !user) return;
+    setIsSavingPreference(true);
+    try {
+      const result = await updateProfile(token, {
+        name: user.name,
+        location: user.location,
+        avatarUrl: user.avatarUrl,
+        phoneNumber: user.phoneNumber,
+        pickupTime: patch.pickupTime ?? user.pickupTime,
+        pickupInstructions: patch.pickupInstructions ?? user.pickupInstructions,
+        allowCalls: patch.allowCalls ?? user.allowCalls,
+      });
+      setCurrentUser(result.user);
+      setUser(result.user);
+      setIsPreferenceModalVisible(false);
+    } catch (requestError) {
+      Alert.alert('Could not save preference', requestError instanceof Error ? requestError.message : 'Please try again.');
+    } finally {
+      setIsSavingPreference(false);
+    }
+  }
+
   if (isLoading) {
     return <View style={styles.loading}><ActivityIndicator color="#138A43" size="large" /><Text style={styles.loadingText}>Loading your settings...</Text></View>;
   }
@@ -80,16 +149,16 @@ export default function CustomerSettings() {
       <View style={styles.profileCard}>
         <View style={styles.avatar}>{user?.avatarUrl ? <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} /> : <Text style={styles.avatarText}>{user?.name?.charAt(0).toUpperCase() ?? '?'}</Text>}</View>
         <View style={styles.profileCopy}><Text style={styles.name}>{user?.name ?? 'Neighbour'}</Text><Text style={styles.email}>{user?.email ?? 'Email not available'}</Text><View style={styles.memberBadge}><Ionicons color="#9A6700" name="ribbon-outline" size={12} /><Text style={styles.memberText}>{user?.role === 'shop' ? 'Shop Owner' : 'Gold Saver Member'}</Text></View></View>
-        <TouchableOpacity accessibilityLabel="Edit profile" onPress={() => router.push('/customer/edit-profile')}><Ionicons color="#667085" name="pencil" size={17} /></TouchableOpacity>
       </View>
+      <View style={styles.card}><SettingRow icon="person-circle-outline" label="My Profile" value="View account details and manage your profile" onPress={() => router.push('/customer/profile')} /></View>
 
       <View style={styles.quickStats}><MetricCard icon="checkmark-done-outline" label="Pickups done" value="28" tone="#EAF7F0" /><MetricCard icon="wallet-outline" label="Saved this month" value="Rs. 1,400" tone="#EEF4FF" /><MetricCard icon="star-outline" label="Community rating" value="4.9 ★" tone="#FFF6D9" /></View>
 
-      <SectionTitle icon="car-outline" title="Curbside & Pickup Defaults" />
-      <View style={styles.card}><SettingRow icon="location-outline" label="Pickup location" value={user?.location ?? 'Add your delivery area'} action={<Text style={styles.change}>Change</Text>} /><SettingRow icon="time-outline" label="Preferred curbside window" value="5:00 PM - 6:00 PM" /><SettingRow icon="bag-check-outline" label="Pickup instructions" value="Leave order in the car boot" /></View>
+      <SectionTitle icon="storefront-outline" title="Shop Pickup Preferences" />
+      <View style={styles.card}><SettingRow icon="location-outline" label="Pickup location" value={user?.location ?? 'Add a shop pickup location'} action={<Text style={styles.change}>Change</Text>} onPress={() => router.push('/customer/edit-profile')} /><SettingRow icon="time-outline" label="Preferred pickup time" value={user?.pickupTime ?? 'Choose a time to collect your order'} action={<Text style={styles.change}>Choose</Text>} onPress={openTimeEditor} /><SettingRow icon="car-outline" label="Vehicle / pickup instructions" value={user?.pickupInstructions ?? 'Help the shop identify you at collection'} action={<Text style={styles.change}>Edit</Text>} onPress={openInstructionsEditor} /><SettingRow icon="call-outline" label="Allow shop to call me" value={user?.allowCalls ? 'Phone number visible to the shop' : 'Phone number hidden from the shop'} action={<Switch disabled={isSavingPreference} onValueChange={(allowCalls) => savePreferences({ allowCalls })} thumbColor="#fff" trackColor={{ false: '#D0D5DD', true: '#138A43' }} value={user?.allowCalls ?? false} />} /></View>
 
       <SectionTitle icon="repeat-outline" title="Order & Substitution Rules" />
-      <View style={styles.card}><SettingRow icon="checkmark-circle-outline" label="Always ask me via SMS / Call" action={<Switch onValueChange={() => undefined} thumbColor="#fff" trackColor={{ false: '#D0D5DD', true: '#138A43' }} value={true} />} /><SettingRow icon="refresh-outline" label="Auto-replace with Organic/Best Match" action={<Switch onValueChange={() => undefined} thumbColor="#fff" trackColor={{ false: '#D0D5DD', true: '#138A43' }} value={false} />} /><SettingRow icon="close-circle-outline" label="Cancel missing items directly" action={<Switch onValueChange={() => undefined} thumbColor="#fff" trackColor={{ false: '#D0D5DD', true: '#138A43' }} value={false} />} /><SettingRow icon="leaf-outline" label="Bring My Own Tote Bags" action={<Switch onValueChange={() => undefined} thumbColor="#fff" trackColor={{ false: '#D0D5DD', true: '#138A43' }} value={true} />} /></View>
+      <View style={styles.card}><SettingRow icon="refresh-outline" label="Auto-replace with Organic/Best Match" action={<Switch onValueChange={() => undefined} thumbColor="#fff" trackColor={{ false: '#D0D5DD', true: '#138A43' }} value={false} />} /><SettingRow icon="close-circle-outline" label="Cancel missing items directly" action={<Switch onValueChange={() => undefined} thumbColor="#fff" trackColor={{ false: '#D0D5DD', true: '#138A43' }} value={false} />} /><SettingRow icon="leaf-outline" label="Bring My Own Tote Bags" action={<Switch onValueChange={() => undefined} thumbColor="#fff" trackColor={{ false: '#D0D5DD', true: '#138A43' }} value={true} />} /></View>
 
       <SectionTitle icon="language-outline" title="Language & Region" />
       <View style={styles.card}><SettingRow icon="language-outline" label="App Language" value="English" action={<Text style={styles.languagePill}>English</Text>} /><SettingRow icon="cash-outline" label="Currency Base" value="Sri Lankan Rupee" action={<Text style={styles.currencyPill}>LKR (Rs.)</Text>} /></View>
@@ -108,6 +177,10 @@ export default function CustomerSettings() {
       <TouchableOpacity onPress={logout} style={styles.logout}><Ionicons color="#B42318" name="log-out-outline" size={17} /><Text style={styles.logoutText}>Log Out of Account</Text></TouchableOpacity>
       <Text style={styles.version}>NeighbourMart v3.4.1 · Customer Build 4942{`\n`}Empowering Local Grocers Across Sri Lanka</Text>
       </ScrollView>
+      {isNativeTimePickerVisible ? <DateTimePicker display="clock" mode="time" onChange={handleTimeChange} value={timeDraft} /> : null}
+      <Modal animationType="fade" transparent visible={isPreferenceModalVisible} onRequestClose={() => setIsPreferenceModalVisible(false)}>
+        <View style={styles.modalBackdrop}><View style={styles.modalCard}><Text style={styles.modalTitle}>{preferenceMode === 'time' ? 'Preferred pickup time' : 'Vehicle / pickup instructions'}</Text><Text style={styles.modalHint}>{preferenceMode === 'time' ? 'Choose when you plan to collect your order from the shop.' : 'Describe your vehicle so the shop can identify you when you collect your order.'}</Text>{preferenceMode === 'time' ? <DateTimePicker display="spinner" mode="time" onChange={handleTimeChange} textColor="#138A43" themeVariant="light" value={timeDraft} /> : <TextInput autoFocus multiline onChangeText={setInstructionsDraft} placeholder="For example, white Toyota Aqua, plate ABC-1234" placeholderTextColor="#98A2B3" style={styles.instructionsInput} value={instructionsDraft} />}{preferenceMode === 'time' ? <View style={styles.modalActions}><TouchableOpacity onPress={() => setIsPreferenceModalVisible(false)} style={styles.modalCancel}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity><TouchableOpacity disabled={isSavingPreference} onPress={() => savePreferences({ pickupTime: formatPickupTime(timeDraft) })} style={styles.modalSave}><Text style={styles.modalSaveText}>{isSavingPreference ? 'Saving...' : 'Save time'}</Text></TouchableOpacity></View> : <View style={styles.modalActions}><TouchableOpacity onPress={() => setIsPreferenceModalVisible(false)} style={styles.modalCancel}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity><TouchableOpacity disabled={isSavingPreference} onPress={() => savePreferences({ pickupInstructions: instructionsDraft.trim() })} style={styles.modalSave}><Text style={styles.modalSaveText}>{isSavingPreference ? 'Saving...' : 'Save instructions'}</Text></TouchableOpacity></View>}</View></View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -151,4 +224,14 @@ const styles = StyleSheet.create({
   logout: { alignItems: 'center', backgroundColor: '#FEE4E2', borderRadius: 10, flexDirection: 'row', gap: 7, justifyContent: 'center', marginTop: 4, padding: 12 },
   logoutText: { color: '#B42318', fontSize: 13, fontWeight: '800' },
   version: { color: '#98A2B3', fontSize: 9, lineHeight: 14, textAlign: 'center' },
+  modalBackdrop: { alignItems: 'center', backgroundColor: 'rgba(16, 24, 40, 0.45)', flex: 1, justifyContent: 'center', padding: 24 },
+  modalCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, width: '100%' },
+  modalTitle: { color: '#172B24', fontSize: 17, fontWeight: '800' },
+  modalHint: { color: '#667085', fontSize: 12, lineHeight: 18, marginTop: 6 },
+  instructionsInput: { borderColor: '#D8DEE8', borderRadius: 10, borderWidth: 1, color: '#172B24', marginTop: 16, minHeight: 92, padding: 13, textAlignVertical: 'top' },
+  modalActions: { flexDirection: 'row', gap: 9, justifyContent: 'flex-end', marginTop: 18 },
+  modalCancel: { borderColor: '#D8DEE8', borderRadius: 9, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10 },
+  modalCancelText: { color: '#667085', fontSize: 12, fontWeight: '700' },
+  modalSave: { backgroundColor: '#138A43', borderRadius: 9, paddingHorizontal: 14, paddingVertical: 10 },
+  modalSaveText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 });

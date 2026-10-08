@@ -6,6 +6,10 @@ export type AuthUser = {
   email: string;
   location: string;
   avatarUrl?: string;
+  phoneNumber?: string;
+  pickupTime?: string;
+  pickupInstructions?: string;
+  allowCalls?: boolean;
   role: UserRole;
 };
 

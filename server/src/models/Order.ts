@@ -14,6 +14,7 @@ const orderItemSchema = new Schema(
 const orderSchema = new Schema(
   {
     customer: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    customerName: { type: String, trim: true }, // added for shop-owner screens (optional)
     shop: { type: Schema.Types.ObjectId, ref: 'Shop', required: true },
     items: { type: [orderItemSchema], required: true },
     pickupSlot: { type: Schema.Types.ObjectId, ref: 'PickupSlot' },
