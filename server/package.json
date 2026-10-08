@@ -7,6 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "seed:demo": "tsx src/scripts/seedDemo.ts",
     "test": "tsx --test tests/checkout.test.ts",
+    "test:atlas": "node run-isolated-tests.cjs",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit -p tsconfig.json"
@@ -24,6 +25,7 @@
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.7.2",
+    "mongodb-memory-server-core": "^11.3.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.2"
   }

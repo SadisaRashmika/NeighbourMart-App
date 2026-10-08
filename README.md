@@ -45,4 +45,6 @@ npm run typecheck
 npm run build
 ```
 
-Feature endpoints intentionally return HTTP 501 until the assigned team members implement them. The health endpoint is ready to use.
+Member 2's cart, replacement approval, and pickup checkout are implemented. Supporting password login, product browsing, and customer order listing are available. Other team members' registration, shop management, reporting, settings, and tracking interfaces still contain placeholders.
+
+See [Member 2 setup and testing](docs/MEMBER_2.md) for the demo walkthrough, API contract, requirement traceability, and remaining assignment evidence.
