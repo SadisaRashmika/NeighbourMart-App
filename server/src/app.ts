@@ -6,6 +6,7 @@ import authRoutes from './routes/authRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import reminderRoutes from './routes/reminderRoutes.js';
 import shopRoutes from './routes/shopRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 
@@ -29,6 +30,7 @@ export function createApp() {
   app.use('/api/products', productRoutes);
   app.use('/api/orders', orderRoutes);
   app.use('/api/reports', reportRoutes);
+  app.use('/api/reminders', reminderRoutes);
 
   app.use((_request, response) => {
     response.status(404).json({ message: 'Route not found' });
