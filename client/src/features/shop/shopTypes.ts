@@ -20,7 +20,8 @@ export type StockItem = {
 };
 
 export type StockInput = Omit<StockItem, 'id'>;
-export type ShopProfile = { id: string; name: string; address: string; acceptingOrders: boolean };
+export type ShopProfile = { id: string; name: string; category?: string; address: string; phone?: string; acceptingOrders: boolean; openingTime: string; closingTime: string; pickupBufferMinutes: number; activeOrdersCap: number; autoSuggestSubstitutions: boolean; autoCancelExpiredPickups: boolean; pickupExpiryMinutes: number; acceptsCounterCash: boolean };
+export type ShopProfileUpdate = Partial<Pick<ShopProfile, 'name' | 'category' | 'address' | 'phone' | 'acceptingOrders' | 'openingTime' | 'closingTime' | 'pickupBufferMinutes' | 'activeOrdersCap' | 'autoSuggestSubstitutions' | 'autoCancelExpiredPickups' | 'pickupExpiryMinutes' | 'acceptsCounterCash'>> & { ownerName?: string };
 
 export const LOW_STOCK_LIMIT = 5;
 export const stockState = (item: StockItem): 'out' | 'low' | 'in' =>
