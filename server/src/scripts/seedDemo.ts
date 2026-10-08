@@ -23,6 +23,7 @@ async function seed() {
   const shop = await ShopModel.findOneAndUpdate(
     { owner: owner._id, name: "Silva's Corner Grocery (Demo)" },
     {
+      $set: { packingFee: 50, communityDiscount: 40 },
       $setOnInsert: {
         address: "Peradeniya Road, Kandy",
         acceptingOrders: true,
@@ -97,6 +98,8 @@ async function seed() {
       ["17:00", "17:30"],
       ["17:30", "18:00"],
       ["18:00", "18:30"],
+      ["18:30", "19:00"],
+      ["19:00", "19:30"],
     ]) {
       await PickupSlotModel.findOneAndUpdate(
         { shop: shop._id, date: new Date(localDate), startTime },

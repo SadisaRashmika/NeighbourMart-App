@@ -1,8 +1,9 @@
 import { Tabs } from 'expo-router';
+import { CustomerFooter } from '@/components/customer/CustomerFooter';
 
 export default function CustomerTabsLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false }}>
+    <Tabs screenOptions={{ headerShown: false }} tabBar={() => <CustomerFooter />}>
       <Tabs.Screen name="dashboard" options={{ title: 'Home' }} />
       <Tabs.Screen name="cart" options={{ title: 'Cart' }} />
       <Tabs.Screen name="orders" options={{ title: 'Orders' }} />

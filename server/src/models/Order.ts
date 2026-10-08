@@ -23,6 +23,8 @@ const orderSchema = new Schema(
       default: 'pending',
     },
     total: { type: Number, required: true, min: 0 },
+    packingFee: { type: Number, min: 0, default: 0 },
+    communityDiscount: { type: Number, min: 0, default: 0 },
     checkoutKey: { type: String },
     pickupNote: { type: String, maxlength: 300 },
     paymentMethod: { type: String, enum: ['cash', 'card', 'lankaqr'], default: 'cash' },

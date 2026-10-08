@@ -7,6 +7,8 @@ const shopSchema = new Schema(
     category: { type: String, trim: true },
     address: { type: String, required: true, trim: true },
     acceptingOrders: { type: Boolean, default: true },
+    packingFee: { type: Number, min: 0, default: 0 },
+    communityDiscount: { type: Number, min: 0, default: 0 },
   },
   { timestamps: true }
 );

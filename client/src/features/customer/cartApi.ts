@@ -1,6 +1,9 @@
 import { apiRequest } from "@/services/api";
 import type { CartItem, CustomerOrder, Product } from "./customerTypes";
 export type Basket = {
+  subtotal?: number;
+  packingFee?: number;
+  communityDiscount?: number;
   items: CartItem[];
   total: number;
   shop: { id: string; name: string; address: string } | null;
