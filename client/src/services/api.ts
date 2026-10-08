@@ -1,5 +1,11 @@
 import Constants from 'expo-constants';
 
+let authToken: string | null = null;
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setApiAuthToken(token: string | null) { authToken = token; }
+export function setUnauthorizedHandler(handler: (() => void) | null) { unauthorizedHandler = handler; }
+
 function getApiUrl() {
   const configuredUrl = process.env.EXPO_PUBLIC_API_URL;
   const hostUri = Constants.expoConfig?.hostUri;
@@ -19,7 +25,7 @@ export async function apiRequest<T>(path: string, options?: RequestInit): Promis
     response = await fetch(`${apiUrl}${path}`, {
       ...options,
       signal: controller.signal,
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      headers: { 'Content-Type': 'application/json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}), ...options?.headers },
     });
   } catch {
     throw new Error(`Cannot reach the NeighbourMart server at ${getApiUrl()}. Check that the server is running and the phone uses the same Wi-Fi network, or configure a public backend URL.`);
@@ -28,6 +34,7 @@ export async function apiRequest<T>(path: string, options?: RequestInit): Promis
   }
 
   if (!response.ok) {
+    if (response.status === 401) unauthorizedHandler?.();
     const body = await response.json().catch(() => null) as { message?: string } | null;
     throw new Error(body?.message ?? `API request failed with status ${response.status}`);
   }

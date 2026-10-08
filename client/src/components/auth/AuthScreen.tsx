@@ -1,12 +1,16 @@
-import { PropsWithChildren } from 'react';
+import { PropsWithChildren, type ReactNode } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthHeader } from './AuthHeader';
 
-export function AuthScreen({ children }: PropsWithChildren) {
+type AuthScreenProps = PropsWithChildren<{
+  header?: ReactNode;
+}>;
+
+export function AuthScreen({ children, header }: AuthScreenProps) {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
-      <AuthHeader />
+      {header ?? <AuthHeader />}
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {children}
       </ScrollView>
