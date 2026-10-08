@@ -1,5 +1,6 @@
 import { createContext, useState, type PropsWithChildren } from 'react';
 import type { AuthUser } from '@/features/auth/authTypes';
+import { setAuthToken } from '@/services/api';
 
 type AuthContextValue = {
   user: AuthUser | null;
@@ -14,7 +15,8 @@ export const AuthContext = createContext<AuthContextValue>({
 });
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, updateUser] = useState<AuthUser | null>(null);
+  const setUser = (next: AuthUser | null) => { setAuthToken(next?.token ?? null); updateUser(next); };
 
   return <AuthContext.Provider value={{ user, isLoading: false, setUser }}>{children}</AuthContext.Provider>;
 }

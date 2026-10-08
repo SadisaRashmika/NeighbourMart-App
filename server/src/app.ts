@@ -8,6 +8,7 @@ import productRoutes from './routes/productRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import shopRoutes from './routes/shopRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import cartRoutes from './routes/cartRoutes.js';
 
 export function createApp() {
   const app = express();
@@ -28,6 +29,7 @@ export function createApp() {
   app.use('/api/shops', shopRoutes);
   app.use('/api/products', productRoutes);
   app.use('/api/orders', orderRoutes);
+  app.use('/api/cart', cartRoutes);
   app.use('/api/reports', reportRoutes);
 
   app.use((_request, response) => {

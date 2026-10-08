@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { authMiddleware } from '../middleware/authMiddleware.js';
 import {
   getCurrentUser,
   login,
@@ -8,7 +9,7 @@ import {
 
 const router = Router();
 
-router.get('/me', getCurrentUser);
+router.get('/me', authMiddleware, getCurrentUser);
 router.post('/login', login);
 router.post('/register/customer', registerCustomer);
 router.post('/register/shop', registerShopOwner);

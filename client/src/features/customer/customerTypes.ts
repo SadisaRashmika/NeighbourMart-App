@@ -3,11 +3,15 @@ export type Product = {
   name: string;
   price: number;
   available: boolean;
+  stock?: number;
+  category?: string;
+  shopId?: string;
 };
 
 export type CartItem = {
   product: Product;
   quantity: number;
+  needsReplacement?: boolean;
 };
 
 export type CustomerOrder = {
