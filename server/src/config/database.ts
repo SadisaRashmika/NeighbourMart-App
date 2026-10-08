@@ -1,5 +1,6 @@
 import dns from 'node:dns';
 import mongoose from 'mongoose';
+import { ShopModel } from '../models/Shop.js';
 import { UserModel } from '../models/User.js';
 
 export async function connectDatabase(mongoUri: string | undefined) {
@@ -16,6 +17,7 @@ export async function connectDatabase(mongoUri: string | undefined) {
     try {
       await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
       await UserModel.syncIndexes();
+      await ShopModel.syncIndexes();
       console.log('Connected to MongoDB Atlas successfully!');
       return;
     } catch (error: unknown) {
