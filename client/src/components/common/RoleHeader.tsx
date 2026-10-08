@@ -16,7 +16,7 @@ export function RoleHeader({ role, location = 'Your neighborhood' }: RoleHeaderP
     <>
       <View style={styles.topRow}>
         <View style={styles.brandRow}>
-          <View style={styles.logoMark}><Ionicons color="#fff" name="leaf" size={14} /></View>
+          <View style={styles.logoMark}><Image source={require('../../../assets/images/brand-logo.png.jpg')} style={styles.logoImage} /></View>
           <Text style={styles.brand}>Neighbour<Text style={styles.brandAccent}>Mart</Text></Text>
         </View>
         <View style={styles.actions}>
@@ -38,6 +38,7 @@ const styles = StyleSheet.create({
   topRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   brandRow: { alignItems: 'center', flexDirection: 'row', gap: 7 },
   logoMark: { alignItems: 'center', backgroundColor: '#138A43', borderRadius: 6, height: 25, justifyContent: 'center', width: 25 },
+  logoImage: { borderRadius: 6, height: 25, width: 25 },
   brand: { color: '#172B24', fontSize: 16, fontWeight: '800' },
   brandAccent: { color: '#138A43' },
   actions: { alignItems: 'center', flexDirection: 'row', gap: 16 },
