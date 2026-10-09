@@ -1,5 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { getReport, type ShopReport } from './reportApi';
 import { getMyShop, getShopOrders, getStockItems, updateMyShop, updateOrderStatus, updateStockItem } from './shopApi';
 import { stockState, type OrderStatus, type ShopOrder, type ShopProfile, type StockItem } from './shopTypes';
 
@@ -9,6 +10,7 @@ export function useDashboard() {
   const [shop, setShop] = useState<ShopProfile | null>(null);
   const [orders, setOrders] = useState<ShopOrder[]>([]);
   const [items, setItems] = useState<StockItem[]>([]);
+  const [report, setReport] = useState<ShopReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,6 +19,7 @@ export function useDashboard() {
       setError(null);
       const [s, o, i] = await Promise.all([getMyShop(), getShopOrders(), getStockItems()]);
       setShop(s); setOrders(o); setItems(i);
+      getReport('today').then(setReport).catch(() => setReport(null)); // chart is optional
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not load dashboard'); }
     finally { setLoading(false); }
   }, []);
@@ -38,7 +41,7 @@ export function useDashboard() {
   };
 
   return {
-    shop, loading, error, reload: load, stats,
+    shop, items, report, loading, error, reload: load, stats,
     toPack: orders.filter((o) => o.status === 'new' || o.status === 'preparing').slice(0, 3),
     toggleAccepting: (v: boolean) => run(() => updateMyShop({ acceptingOrders: v })),
     advance: (id: string, next: OrderStatus) => run(() => updateOrderStatus(id, next)),
