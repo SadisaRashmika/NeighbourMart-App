@@ -3,12 +3,23 @@ import { Types } from 'mongoose';
 import { createProduct, deleteProduct, findProductsByShop, updateProduct } from '../services/productService.js';
 import { resolveShop } from '../services/shopService.js';
 
-export const listProducts: RequestHandler = (_request, response) => {
-  response.status(501).json({ message: 'Product endpoints are not implemented yet' });
+import { ProductModel } from '../models/Product.js';
+
+export const listProducts: RequestHandler = async (request, response, next) => {
+  try {
+    const shopId = request.query.shopId as string;
+    const q: any = {};
+    if (shopId) {
+      if (!Types.ObjectId.isValid(shopId)) { response.status(400).json({ message: 'Invalid shopId' }); return; }
+      q.shop = shopId;
+    }
+    const products = await ProductModel.find(q).sort({ createdAt: -1 }).lean();
+    response.json(products.map(dto));
+  } catch (e) { next(e); }
 };
 
-const dto = (p: { _id: unknown; name: string; category: string; price: number; stock: number; available?: boolean | null }) => ({
-  id: String(p._id), name: p.name, category: p.category, price: p.price, stock: p.stock, available: p.available ?? true,
+const dto = (p: { _id: unknown; name: string; category: string; price: number; stock: number; available?: boolean | null; imageUrl?: string | null }) => ({
+  id: String(p._id), name: p.name, category: p.category, price: p.price, stock: p.stock, available: p.available ?? true, imageUrl: p.imageUrl ?? undefined,
 });
 
 function clean(body: Record<string, unknown>, all: boolean) {
@@ -19,6 +30,7 @@ function clean(body: Record<string, unknown>, all: boolean) {
   if (all || body.price !== undefined) { const n = Number(body.price); if (!Number.isFinite(n) || n < 0) errors.push('price must be 0 or more'); else out.price = n; }
   if (all || body.stock !== undefined) { const n = Number(body.stock); if (!Number.isInteger(n) || n < 0) errors.push('stock must be a whole number, 0 or more'); else out.stock = n; }
   if (typeof body.available === 'boolean') out.available = body.available;
+  if (typeof body.imageUrl === 'string') out.imageUrl = body.imageUrl;
   return { out, errors };
 }
 

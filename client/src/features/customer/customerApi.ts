@@ -1,8 +1,12 @@
 import { apiRequest } from '@/services/api';
-import type { CustomerOrder, Product } from './customerTypes';
+import type { CustomerOrder, Product, Shop } from './customerTypes';
 
-export function getProducts() {
-  return apiRequest<Product[]>('/api/products');
+export function getShops() {
+  return apiRequest<Shop[]>('/api/shops');
+}
+
+export function getProducts(shopId?: string) {
+  return apiRequest<Product[]>(`/api/products${shopId ? `?shopId=${shopId}` : ''}`);
 }
 
 export function getCustomerOrders() {

@@ -40,18 +40,9 @@ export default function ShopStock() {
       { text: 'Restock all', onPress: () => needs.forEach((i) => patch(i.id, { stock: i.stock + 10 })) },
     ]);
 
-  const listHeader = (
-    <View>
-      <View style={[styles.search, shadow]}>
-        <Ionicons color={T.mute} name="search" size={18} />
-        <TextInput
-          onChangeText={setQuery}
-          placeholder="Search inventory or category"
-          placeholderTextColor={T.mute}
-          style={styles.searchInput}
-          value={query}
-        />
-      </View>
+  const header = (
+    <View style={styles.screen}>
+      <TextInput onChangeText={setQuery} placeholder="Search inventory or category" style={styles.search} value={query} />
       <View style={styles.chips}>
         {(['all', 'low', 'out'] as Filter[]).map((f) => (
           <TouchableOpacity key={f} onPress={() => setFilter(f)} style={[styles.chip, filter === f && styles.chipOn]}>
@@ -85,47 +76,50 @@ export default function ShopStock() {
     </View>
   );
 
+  if (loading) return <ActivityIndicator color={T.green2} size="large" style={{ backgroundColor: T.bg, flex: 1 }} />;
+  
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
-      <View style={styles.header}>
-        <RoleHeader location="Shop inventory" role="shop" />
-      </View>
-      {loading ? (
-        <ActivityIndicator color={T.green2} size="large" style={{ flex: 1 }} />
-      ) : (
-        <FlatList
-          contentContainerStyle={styles.list}
-          data={shown}
-          keyExtractor={(i) => i.id}
-          ListEmptyComponent={<EmptyState description="Add your first product or change the filter." title="No items found" />}
-          ListHeaderComponent={listHeader}
-          onRefresh={reload}
-          refreshing={false}
-          renderItem={({ item }) => (
-            <StockItemCard
-              item={item}
-              onDelete={() => confirmDelete(item.id, item.name)}
-              onEdit={() =>
-                router.push({
-                  pathname: '/shop/product-form',
-                  params: { id: item.id, name: item.name, category: item.category, price: String(item.price), stock: String(item.stock) },
-                })
-              }
-              onStep={(d) => patch(item.id, { stock: Math.max(0, item.stock + d) })}
-              onToggle={(v) => patch(item.id, { available: v })}
-            />
-          )}
-        />
-      )}
+      <View style={styles.header}><RoleHeader location="Shop inventory" role="shop" /></View>
+      <FlatList
+        contentContainerStyle={styles.list}
+        data={shown}
+        keyExtractor={(i) => i.id}
+        ListEmptyComponent={<EmptyState description="Add your first product or change the filter." title="No items found" />}
+        ListHeaderComponent={header}
+        onRefresh={reload}
+        refreshing={false}
+        renderItem={({ item }) => (
+          <StockItemCard
+            item={item}
+            onDelete={() => confirmDelete(item.id, item.name)}
+            onEdit={() => router.push({ pathname: '/shop/product-form', params: { id: item.id, name: item.name, category: item.category, price: String(item.price), stock: String(item.stock), imageUrl: item.imageUrl } })}
+            onStep={(d) => patch(item.id, { stock: Math.max(0, item.stock + d) })}
+            onToggle={(v) => patch(item.id, { available: v })}
+          />
+        )}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { backgroundColor: T.bg, flex: 1 },
-  header: { backgroundColor: T.bg, paddingHorizontal: 16, paddingTop: 8 },
+  safeArea: { backgroundColor: '#F4F5FB', flex: 1 },
+  header: { backgroundColor: '#F4F5FB', paddingHorizontal: 16, paddingTop: 8 },
+  screen: { backgroundColor: '#F4F5FB', flex: 1, padding: 14 },
+  search: { backgroundColor: '#fff', borderColor: '#E5E7EB', borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 12 },
+  chips: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  chip: { backgroundColor: '#E8EAF9', borderRadius: 99, paddingHorizontal: 12, paddingVertical: 8 },
+  chipOn: { backgroundColor: '#0B6B3A' },
+  chipText: { color: '#101828', fontSize: 12, fontWeight: '700' },
+  dot: { borderRadius: 4, height: 8, width: 8 },
+  bulk: { backgroundColor: '#fff', borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  bulkIcon: { backgroundColor: '#0B6B3A', borderRadius: 12, padding: 8 },
+  bulkTitle: { color: '#101828', fontSize: 15, fontWeight: '800' },
+  bulkSub: { color: '#667085', fontSize: 12, marginTop: 2 },
+  review: { backgroundColor: '#F2F4F7', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10 },
+  reviewText: { color: '#101828', fontSize: 13, fontWeight: '700' },
+  add: { marginBottom: 16 },
   list: { padding: 14, paddingBottom: 40 },
-  search: { alignItems: 'center', backgroundColor: '#fff', borderRadius: 16, flexDirection: 'row', gap: 8, marginBottom: 12, paddingHorizontal: 14 },
-  searchInput: { color: T.ink, flex: 1, paddingVertical: 13 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  chip: { alignItems: 'center', backgroundColor:
+  error: { color: '#E11D48', marginBottom: 8 },
+});
