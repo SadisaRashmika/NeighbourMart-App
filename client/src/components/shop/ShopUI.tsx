@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
 import { T } from './shopTheme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -26,7 +26,10 @@ export function SectionTitle({ title, action, onAction, dot }: { title: string; 
   );
 }
 
-export function Thumb({ emoji, size = 54 }: { emoji: string; size?: number }) {
+export function Thumb({ emoji, imageUrl, size = 54 }: { emoji: string; imageUrl?: string; size?: number }) {
+  if (imageUrl) {
+    return <Image source={{ uri: imageUrl }} style={[s.thumb, { width: size, height: size }]} />;
+  }
   return <View style={[s.thumb, { width: size, height: size }]}><Text style={{ fontSize: size * 0.5 }}>{emoji}</Text></View>;
 }
 

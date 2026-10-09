@@ -20,6 +20,7 @@ export default function ShopDashboard() {
   const values = d.report?.values ?? [];
   const max = Math.max(1, ...values);
   const isLow = (itemName: string) => d.items.some((p) => p.name === itemName && stockState(p) !== 'in');
+  const s = styles;
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
@@ -141,5 +142,9 @@ const styles = StyleSheet.create({
   chart: { alignItems: 'flex-end', flexDirection: 'row', gap: 6, height: 110, justifyContent: 'space-between', marginVertical: 12 },
   barCol: { alignItems: 'center', flex: 1, justifyContent: 'flex-end' },
   bar: { borderRadius: 6, width: '78%' },
-  axis: { color: T.mute, fontSize: 9, marginTop: 4 },
+  avatar: { backgroundColor: '#138A43', borderRadius: 24, height: 48, width: 48, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  mute: { color: '#667085', fontSize: 13 },
+  toggleBox: { alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, flexDirection: 'row', gap: 8, marginTop: 4, padding: 12 },
+  bold: { fontWeight: '800' },
 });

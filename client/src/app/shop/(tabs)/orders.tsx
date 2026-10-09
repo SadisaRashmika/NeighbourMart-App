@@ -46,13 +46,11 @@ export default function ShopOrders() {
   const confirm = (title: string, msg: string, action: () => void) =>
     Alert.alert(title, msg, [{ text: 'Keep', style: 'cancel' }, { text: 'Yes', style: 'destructive', onPress: action }]);
 
-  return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
-      <View style={styles.header}><RoleHeader location="Order desk" role="shop" /></View>
-      <View style={styles.screen}>
+  const header = (
+    <View style={styles.screen}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginBottom: 12 }}>
         {TABS.map((t) => (
-          <TouchableOpacity key={t.key} onPress={() => setTab(t.key)} style={[styles.chip, tab === t.key && styles.chipOn]}>
+          <TouchableOpacity key={t.key} onPress={() => setTab(t.key)} style={[styles.chip, tab === t.key && styles.chipOn, { flexDirection: 'row', alignItems: 'center' }]}>
             <Text style={[styles.chipText, tab === t.key && { color: '#fff' }]}>{t.label}</Text>
             <View style={[styles.badge, tab === t.key && { backgroundColor: '#fff' }]}><Text style={styles.badgeText}>{count(t.key)}</Text></View>
           </TouchableOpacity>
@@ -64,8 +62,10 @@ export default function ShopOrders() {
   );
 
   if (loading) return <ActivityIndicator color={T.green2} size="large" style={{ backgroundColor: T.bg, flex: 1 }} />;
+  
   return (
-    <View style={{ backgroundColor: T.bg, flex: 1 }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+      <View style={styles.header}><RoleHeader location="Order desk" role="shop" /></View>
       <FlatList
         contentContainerStyle={styles.list}
         data={shown}
@@ -112,7 +112,6 @@ export default function ShopOrders() {
           </View>
         </View>
       </Modal>
-      </View>
     </SafeAreaView>
   );
 }
@@ -124,14 +123,22 @@ const styles = StyleSheet.create({
   chip: { backgroundColor: '#E8EAF9', borderRadius: 99, marginRight: 8, paddingHorizontal: 14, paddingVertical: 8 },
   chipOn: { backgroundColor: '#0B6B3A' },
   chipText: { fontSize: 12, fontWeight: '700' },
+  badge: { backgroundColor: '#D1D5DB', borderRadius: 99, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 6 },
+  badgeText: { color: '#374151', fontSize: 10, fontWeight: '700' },
+  add: { marginBottom: 12 },
   error: { color: '#E11D48', marginBottom: 8 },
+  list: { padding: 14, paddingBottom: 40 },
   backdrop: { backgroundColor: '#0006', flex: 1, justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, gap: 8, padding: 18 },
-  title: { fontSize: 18, fontWeight: '800' },
-  input: { backgroundColor: '#FAFAFA', borderColor: '#E5E7EB', borderRadius: 10, borderWidth: 1, padding: 10 },
+  sheet: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, gap: 12, padding: 18, paddingBottom: 30 },
+  sheetHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  sheetTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
+  inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FAFAFA', borderColor: '#E5E7EB', borderRadius: 10, borderWidth: 1, paddingHorizontal: 12 },
+  input: { flex: 1, padding: 12, color: '#111827' },
   line: { alignItems: 'center', borderBottomColor: '#F2F4F7', borderBottomWidth: 1, flexDirection: 'row', gap: 8, paddingVertical: 8 },
+  bold: { fontWeight: '800', color: '#111827' },
   mute: { color: '#667085', fontSize: 12 },
   step: { backgroundColor: '#F2F4F7', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  q: { fontWeight: '800', minWidth: 20, textAlign: 'center' },
-  total: { color: '#0B6B3A', fontSize: 16, fontWeight: '800', marginTop: 4 },
+  q: { fontWeight: '800', minWidth: 20, textAlign: 'center', color: '#111827' },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 8 },
+  total: { color: '#0B6B3A', fontSize: 16, fontWeight: '800' },
 });
