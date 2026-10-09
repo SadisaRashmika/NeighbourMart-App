@@ -99,10 +99,12 @@ export function PickupReminderCard() {
       <TouchableOpacity accessibilityLabel="Edit pickup reminder list" onPress={openEditor} style={styles.squareCard}>
         <ImageBackground source={require('../../../assets/images/img5.jpg')} style={styles.bgImage} imageStyle={styles.bgImageStyle}>
           <View style={styles.overlay}>
-            <Text style={styles.squareTitleWhite}>Reminder List</Text>
-            <Text style={styles.squareSubtitleWhite}>
-              {isLoading ? 'Loading...' : items.length ? `${items.length} items` : 'Empty'}
-            </Text>
+            <View style={styles.textPill}>
+              <Text style={styles.squareTitle}>Reminder List</Text>
+              <Text style={styles.squareSubtitle} numberOfLines={1}>
+                {isLoading ? 'Loading...' : items.length ? `${items.length} items` : 'Empty'}
+              </Text>
+            </View>
           </View>
         </ImageBackground>
       </TouchableOpacity>
@@ -117,12 +119,13 @@ export function PickupReminderCard() {
 }
 
 const styles = StyleSheet.create({
-  squareCard: { flex: 1, aspectRatio: 1, minHeight: 110, borderRadius: 14 },
+  squareCard: { flex: 1, aspectRatio: 1, minHeight: 110, borderRadius: 14, borderWidth: 2, borderColor: '#138A43', overflow: 'hidden' },
   bgImage: { flex: 1, width: '100%', height: '100%', justifyContent: 'center' },
   bgImageStyle: { borderRadius: 14 },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 14, padding: 12, paddingBottom: 16, alignItems: 'center', justifyContent: 'flex-end', gap: 2 },
-  squareTitleWhite: { color: '#ffffff', fontSize: 13, fontWeight: '800', textAlign: 'center' },
-  squareSubtitleWhite: { color: '#f3f4f6', fontSize: 11, textAlign: 'center' },
+  overlay: { flex: 1, justifyContent: 'flex-end', padding: 10 },
+  textPill: { paddingVertical: 8, paddingHorizontal: 6, alignItems: 'center', width: '100%' },
+  squareTitle: { color: '#172B24', fontSize: 13, fontWeight: '800', textAlign: 'center' },
+  squareSubtitle: { color: '#138A43', fontSize: 11, fontWeight: '700', textAlign: 'center', marginTop: 2 },
   modalScreen: { backgroundColor: '#F7F9F8', flex: 1 },
   modalHeader: { alignItems: 'center', backgroundColor: '#fff', borderBottomColor: '#E4E8EF', borderBottomWidth: 1, flexDirection: 'row', justifyContent: 'space-between', padding: 16 },
   cancel: { color: '#667085', fontSize: 14 },
