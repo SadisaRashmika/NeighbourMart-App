@@ -1,7 +1,7 @@
 export type ShopOrder = {
   id: string;
   customerName: string;
-  status: 'new' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+  status: 'pending' | 'accepted' | 'preparing' | 'ready' | 'picked-up' | 'cancelled';
   total: number;
 };
 

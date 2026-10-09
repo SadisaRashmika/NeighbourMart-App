@@ -1,6 +1,7 @@
 import { after, before, beforeEach, test } from "node:test";
 import '../src/config/environment.js';
 import assert from "node:assert/strict";
+import { updateOrderStatus } from '../src/services/orderIntegration.js';
 import mongoose from "mongoose";
 import { MongoMemoryReplSet } from "mongodb-memory-server-core";
 import bcrypt from "bcryptjs";
@@ -117,6 +118,37 @@ after(async () => {
     await mongoose.connection.dropDatabase();
   await mongoose.disconnect();
   if (db) await db.stop();
+});
+test('checkout hands order to its owner and status updates reach customer tracking', async () => {
+  const owner = await UserModel.create({ name: 'Owner', mobileNumber: '0772222222', role: 'shop' });
+  await ShopModel.updateOne({ _id: shop }, { owner: owner._id });
+  await setCartItem(customer, product, 1);
+  const order = await checkout(customer, body());
+  const token = jwt.sign({}, process.env.JWT_SECRET!, { subject: owner.id });
+  const headers = { Authorization: `Bearer ${token}` };
+  const listed = await fetch(`${url}/api/orders/shop`, { headers });
+  assert.equal((await listed.json())[0].id, order.id);
+  await assert.rejects(updateOrderStatus({ id: customer, role: 'customer' }, order.id, 'ready'), /Shop owner/);
+  await assert.rejects(updateOrderStatus({ id: new mongoose.Types.ObjectId().toString(), role: 'shop' }, order.id, 'accepted'), /not found/);
+  for (const status of ['accepted', 'preparing', 'ready', 'picked-up']) {
+    const changed = await updateOrderStatus({ id: owner.id, role: 'shop' }, order.id, status);
+    assert.equal(changed.status, status);
+  }
+  const customerToken = jwt.sign({}, process.env.JWT_SECRET!, { subject: customer });
+  const tracked = await fetch(`${url}/api/orders/${order.id}`, { headers: { Authorization: `Bearer ${customerToken}` } });
+  const detail = await tracked.json();
+  assert.equal(detail.status, 'picked-up'); assert.equal(detail.items[0].name, 'Red onions');
+  assert.equal(detail.pickupSlot.id, slot); assert.equal(detail.pickupNote, 'Counter pickup');
+});
+test('shop cancellation releases stock and capacity only once', async () => {
+  const owner = await UserModel.create({ name: 'Owner', mobileNumber: '0772222222', role: 'shop' });
+  await ShopModel.updateOne({ _id: shop }, { owner: owner._id });
+  await setCartItem(customer, product, 2);
+  const order = await checkout(customer, body());
+  await updateOrderStatus({ id: owner.id, role: 'shop' }, order.id, 'cancelled');
+  assert.equal((await ProductModel.findById(product))!.stock, 10);
+  assert.equal((await PickupSlotModel.findById(slot))!.booked, 0);
+  await assert.rejects(updateOrderStatus({ id: owner.id, role: 'shop' }, order.id, 'cancelled'), /transition/);
 });
 test("rejects invalid quantities and uses Colombo time for slots", () => {
   for (const value of [0, -1, 1.5, "2", 100, null])

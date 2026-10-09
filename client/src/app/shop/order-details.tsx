@@ -1,10 +1,7 @@
-import { EmptyState } from '@/components/common/EmptyState';
+import { IntegratedOrderDetails } from '@/components/customer/IntegratedOrderDetails';
 
 export default function ShopOrderDetails() {
   return (
-    <EmptyState
-      description="Detailed customer order information and processing actions belong here."
-      title="Shop Order Details"
-    />
+    <IntegratedOrderDetails owner />
   );
 }

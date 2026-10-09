@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Text } from "react-native";
 import { Button } from "@/components/common/Button";
 import {
@@ -50,6 +50,7 @@ export default function CustomerOrders() {
           </Text>
           <Text style={ui.text}>Status: {o.status}</Text>
           <Text style={ui.price}>{currency(o.total)}</Text>
+          <Button label="Track order & pickup" onPress={() => router.push({ pathname: '/customer/order-tracking', params: { orderId: o.id } })} />
         </Card>
       ))}
     </CheckoutPage>
