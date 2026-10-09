@@ -1,9 +1,9 @@
 import type { RequestHandler } from 'express';
-import { resolveShop } from '../services/shopService.js';
+import { findAllShops, resolveShop } from '../services/shopService.js';
 import { UserModel } from '../models/User.js';
 
-export const listShops: RequestHandler = (_request, response) => {
-  response.status(501).json({ message: 'Shop endpoints are not implemented yet' });
+export const listShops: RequestHandler = async (_request, response, next) => {
+  try { response.json((await findAllShops()).map(dto)); } catch (e) { next(e); }
 };
 
 const dto = (s: { _id: unknown; name: string; category?: string | null; address: string; phone?: string | null; acceptingOrders?: boolean | null; openingTime?: string; closingTime?: string; pickupBufferMinutes?: number; activeOrdersCap?: number; autoSuggestSubstitutions?: boolean; autoCancelExpiredPickups?: boolean; pickupExpiryMinutes?: number; acceptsCounterCash?: boolean }) => ({

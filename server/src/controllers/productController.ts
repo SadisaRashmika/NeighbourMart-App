@@ -3,8 +3,19 @@ import { Types } from 'mongoose';
 import { createProduct, deleteProduct, findProductsByShop, updateProduct } from '../services/productService.js';
 import { resolveShop } from '../services/shopService.js';
 
-export const listProducts: RequestHandler = (_request, response) => {
-  response.status(501).json({ message: 'Product endpoints are not implemented yet' });
+import { ProductModel } from '../models/Product.js';
+
+export const listProducts: RequestHandler = async (request, response, next) => {
+  try {
+    const shopId = request.query.shopId as string;
+    const q: any = {};
+    if (shopId) {
+      if (!Types.ObjectId.isValid(shopId)) { response.status(400).json({ message: 'Invalid shopId' }); return; }
+      q.shop = shopId;
+    }
+    const products = await ProductModel.find(q).sort({ createdAt: -1 }).lean();
+    response.json(products.map(dto));
+  } catch (e) { next(e); }
 };
 
 const dto = (p: { _id: unknown; name: string; category: string; price: number; stock: number; available?: boolean | null; imageUrl?: string | null }) => ({

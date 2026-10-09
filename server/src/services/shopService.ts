@@ -5,6 +5,10 @@ export function findShopById(shopId: string) {
   return ShopModel.findById(shopId).lean();
 }
 
+export function findAllShops() {
+  return ShopModel.find().lean();
+}
+
 export async function resolveShop(request: Request) {
   const userId = (request as Request & { userId?: string }).userId;
   const shop = userId ? await ShopModel.findOne({ owner: userId }) : null;
