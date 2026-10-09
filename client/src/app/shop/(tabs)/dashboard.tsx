@@ -1,6 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button } from '@/components/common/Button';
+import { RoleHeader } from '@/components/common/RoleHeader';
 import { DashboardCard } from '@/components/shop/DashboardCard';
 import { ActionButton, Pill, SectionTitle, Thumb } from '@/components/shop/ShopUI';
 import { T, emojiFor, money, shadow, timeAgo } from '@/components/shop/shopTheme';
@@ -19,8 +22,10 @@ export default function ShopDashboard() {
   const isLow = (itemName: string) => d.items.some((p) => p.name === itemName && stockState(p) !== 'in');
 
   return (
-    <ScrollView contentContainerStyle={s.screen} style={{ backgroundColor: T.bg }}>
-      {d.error && <TouchableOpacity onPress={d.reload}><Text style={s.error}>{d.error} - tap to retry</Text></TouchableOpacity>}
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+      <View style={styles.fixedHeader}><RoleHeader location={d.shop?.address ?? 'Shop location'} role="shop" /></View>
+      <ScrollView contentContainerStyle={styles.screen} style={{ backgroundColor: '#F4F5FB' }}>
+      {d.error && <TouchableOpacity onPress={d.reload}><Text style={styles.error}>{d.error} - tap to retry</Text></TouchableOpacity>}
 
       <View style={[s.hero, shadow]}>
         <View style={s.row}>
@@ -41,12 +46,12 @@ export default function ShopDashboard() {
         </View>
       </View>
 
-      <SectionTitle dot={T.green2} title="Today's Pulse" />
-      <View style={s.grid}>
-        <DashboardCard icon="cash-outline" note="Completed today" title="Total Sales" value={money(d.stats.sales)} />
-        <DashboardCard accent="#D97706" icon="time-outline" note={`${d.stats.fresh} new - ${d.stats.packing} preparing`} title="Active Orders" value={`${d.stats.active} pending`} />
-        <DashboardCard accent="#2563EB" icon="checkmark-done-outline" note="Handed over today" title="Fulfilled" value={`${d.stats.fulfilled} orders`} />
-        <DashboardCard icon="alert-circle-outline" note="Needs restocking" title="Low Stock" tone={d.stats.alerts.length ? 'alert' : 'default'} value={`${d.stats.alerts.length} alerts`} />
+      <Text style={styles.h2}>Today&apos;s Pulse</Text>
+      <View style={styles.grid}>
+        <DashboardCard note="Completed today" title="Total Sales" value={`LKR ${d.stats.sales.toLocaleString('en-US')}`} />
+        <DashboardCard note={`${d.stats.fresh} new, ${d.stats.packing} preparing`} title="Active Orders" value={`${d.stats.active} pending`} />
+        <DashboardCard note="Handed over today" title="Fulfilled" value={`${d.stats.fulfilled} orders`} />
+        <DashboardCard note="Needs restocking" title="Low Stock" tone={d.stats.alerts.length ? 'alert' : 'default'} value={`${d.stats.alerts.length} alerts`} />
       </View>
 
       <SectionTitle action={`View All (${d.stats.active})`} dot="#F59E0B" onAction={() => router.push('/shop/orders')} title="Live Orders to Pack" />
@@ -106,44 +111,21 @@ export default function ShopDashboard() {
         );
       })}
 
-      <View style={[s.card, shadow, { marginTop: 18 }]}>
-        <View style={[s.row, { justifyContent: 'space-between' }]}>
-          <View style={s.row}>
-            <View style={s.perfIcon}><Ionicons color={T.green2} name="bar-chart-outline" size={20} /></View>
-            <View>
-              <Text style={s.bold}>Performance & Reports</Text>
-              <Text style={s.mute}>Hourly rush and top sellers</Text>
-            </View>
-          </View>
-          <Pill bg={T.mint} fg={T.green2} text="Live" />
-        </View>
-        {d.report?.peakLabel ? <Pill bg={T.amberBg} fg={T.amber} icon="flame-outline" text={`Peak ${d.report.peakLabel} (${max} orders)`} /> : null}
-        <View style={s.chart}>
-          {values.length === 0 && <Text style={s.mute}>Complete an order to see today's rush.</Text>}
-          {values.map((v, i) => (
-            <View key={d.report?.labels[i]} style={s.barCol}>
-              <View style={[s.bar, { height: 8 + (v / max) * 70, backgroundColor: v === max && v > 0 ? T.green : '#A7E3BD' }]} />
-              <Text style={s.axis}>{d.report?.labels[i]}</Text>
-            </View>
-          ))}
-        </View>
-        <ActionButton icon="document-text-outline" label="View Daily Reports" onPress={() => router.push('/shop/reports')} />
-      </View>
-    </ScrollView>
+      <Button label="View Daily Reports" onPress={() => router.push('/shop/reports')} style={{ marginTop: 16 }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
-  screen: { padding: 14, paddingBottom: 40 },
-  error: { color: T.red, marginBottom: 8 },
-  row: { alignItems: 'center', flexDirection: 'row', gap: 10 },
-  hero: { backgroundColor: T.mint, borderColor: '#BFEBD0', borderRadius: 22, borderWidth: 1, gap: 12, padding: 16 },
-  avatar: { alignItems: 'center', backgroundColor: T.green, borderRadius: 16, height: 56, justifyContent: 'center', width: 56 },
-  avatarText: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  shopName: { color: T.ink, fontSize: 20, fontWeight: '800' },
-  toggleBox: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.75)', borderRadius: 14, flexDirection: 'row', gap: 10, padding: 12 },
-  mute: { color: T.mute, fontSize: 12 },
-  bold: { color: T.ink, fontSize: 14, fontWeight: '800' },
+const styles = StyleSheet.create({
+  safeArea: { backgroundColor: '#F4F5FB', flex: 1 },
+  fixedHeader: { backgroundColor: '#F4F5FB', paddingHorizontal: 16, paddingTop: 8 },
+  screen: { gap: 8, padding: 14, paddingBottom: 40 },
+  error: { color: '#E11D48' },
+  hero: { backgroundColor: '#E3F6EA', borderRadius: 16, gap: 8, padding: 16 },
+  shopName: { fontSize: 20, fontWeight: '800' },
+  row: { alignItems: 'center', flexDirection: 'row', gap: 8, justifyContent: 'space-between' },
+  h2: { fontSize: 16, fontWeight: '800', marginTop: 12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   card: { backgroundColor: T.card, borderRadius: 20, gap: 4, marginBottom: 12, padding: 14 },
   chip: { backgroundColor: '#FDE9D0', borderRadius: 8, color: '#92400E', fontSize: 12, fontWeight: '800', overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 3 },

@@ -2,7 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
+import { RoleHeader } from '@/components/common/RoleHeader';
 import { StockItemCard } from '@/components/shop/StockItemCard';
 import { ActionButton } from '@/components/shop/ShopUI';
 import { T, shadow } from '@/components/shop/shopTheme';
@@ -29,12 +32,11 @@ export default function ShopStock() {
       { text: 'Restock all', onPress: () => needs.forEach((i) => patch(i.id, { stock: i.stock + 10 })) },
     ]);
 
-  const header = (
-    <View>
-      <View style={[styles.search, shadow]}>
-        <Ionicons color={T.mute} name="search" size={18} />
-        <TextInput onChangeText={setQuery} placeholder="Search inventory or category" placeholderTextColor={T.mute} style={styles.searchInput} value={query} />
-      </View>
+  return (
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+      <View style={styles.header}><RoleHeader location="Shop inventory" role="shop" /></View>
+      <View style={styles.screen}>
+      <TextInput onChangeText={setQuery} placeholder="Search inventory or category" style={styles.search} value={query} />
       <View style={styles.chips}>
         {(['all', 'low', 'out'] as Filter[]).map((f) => (
           <TouchableOpacity key={f} onPress={() => setFilter(f)} style={[styles.chip, filter === f && styles.chipOn]}>
@@ -75,26 +77,19 @@ export default function ShopStock() {
           onToggle={(v) => patch(item.id, { available: v })}
         />
       )}
-      style={{ backgroundColor: T.bg }}
-    />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  list: { padding: 14, paddingBottom: 40 },
-  search: { alignItems: 'center', backgroundColor: '#fff', borderRadius: 16, flexDirection: 'row', gap: 8, marginBottom: 12, paddingHorizontal: 14 },
-  searchInput: { color: T.ink, flex: 1, paddingVertical: 13 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  chip: { alignItems: 'center', backgroundColor: T.lav, borderRadius: 99, flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 8 },
-  chipOn: { backgroundColor: T.green },
-  chipText: { color: T.ink, fontSize: 12, fontWeight: '800' },
-  dot: { borderRadius: 4, height: 8, width: 8 },
-  bulk: { alignItems: 'center', backgroundColor: T.green, borderRadius: 20, flexDirection: 'row', gap: 12, marginBottom: 12, padding: 14 },
-  bulkIcon: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 14, height: 44, justifyContent: 'center', width: 44 },
-  bulkTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  bulkSub: { color: '#D7F5E3', fontSize: 12 },
-  review: { backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
-  reviewText: { color: T.green, fontWeight: '800' },
-  add: { backgroundColor: T.green, borderColor: T.green, marginBottom: 14, minHeight: 54 },
-  error: { color: T.red, marginBottom: 8 },
+  safeArea: { backgroundColor: '#F4F5FB', flex: 1 },
+  header: { backgroundColor: '#F4F5FB', paddingHorizontal: 16, paddingTop: 8 },
+  screen: { backgroundColor: '#F4F5FB', flex: 1, padding: 14 },
+  search: { backgroundColor: '#fff', borderColor: '#E5E7EB', borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 12 },
+  chips: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  chip: { backgroundColor: '#E8EAF9', borderRadius: 99, paddingHorizontal: 12, paddingVertical: 8 },
+  chipOn: { backgroundColor: '#0B6B3A' },
+  chipText: { color: '#101828', fontSize: 12, fontWeight: '700' },
+  error: { color: '#E11D48', marginBottom: 8 },
 });
