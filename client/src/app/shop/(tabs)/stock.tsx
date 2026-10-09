@@ -1,8 +1,10 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
+import { RoleHeader } from '@/components/common/RoleHeader';
 import { StockItemCard } from '@/components/shop/StockItemCard';
 import { useStock } from '@/features/shop/useStock';
 import { stockState } from '@/features/shop/shopTypes';
@@ -31,7 +33,9 @@ export default function ShopStock() {
     ]);
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+      <View style={styles.header}><RoleHeader location="Shop inventory" role="shop" /></View>
+      <View style={styles.screen}>
       <TextInput onChangeText={setQuery} placeholder="Search inventory or category" style={styles.search} value={query} />
       <View style={styles.chips}>
         {(['all', 'low', 'out'] as Filter[]).map((f) => (
@@ -64,11 +68,14 @@ export default function ShopStock() {
           )}
         />
       )}
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { backgroundColor: '#F4F5FB', flex: 1 },
+  header: { backgroundColor: '#F4F5FB', paddingHorizontal: 16, paddingTop: 8 },
   screen: { backgroundColor: '#F4F5FB', flex: 1, padding: 14 },
   search: { backgroundColor: '#fff', borderColor: '#E5E7EB', borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 12 },
   chips: { flexDirection: 'row', gap: 8, marginBottom: 12 },

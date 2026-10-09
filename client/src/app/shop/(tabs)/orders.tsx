@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
+import { RoleHeader } from '@/components/common/RoleHeader';
 import { ShopOrderCard } from '@/components/shop/ShopOrderCard';
 import { createShopOrder, getStockItems } from '@/features/shop/shopApi';
 import type { OrderStatus, StockItem } from '@/features/shop/shopTypes';
@@ -43,7 +45,9 @@ export default function ShopOrders() {
     Alert.alert(title, msg, [{ text: 'Keep', style: 'cancel' }, { text: 'Yes', style: 'destructive', onPress: action }]);
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+      <View style={styles.header}><RoleHeader location="Order desk" role="shop" /></View>
+      <View style={styles.screen}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginBottom: 12 }}>
         {TABS.map((t) => (
           <TouchableOpacity key={t.key} onPress={() => setTab(t.key)} style={[styles.chip, tab === t.key && styles.chipOn]}>
@@ -92,11 +96,14 @@ export default function ShopOrders() {
           </View>
         </View>
       </Modal>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { backgroundColor: '#F4F5FB', flex: 1 },
+  header: { backgroundColor: '#F4F5FB', paddingHorizontal: 16, paddingTop: 8 },
   screen: { backgroundColor: '#F4F5FB', flex: 1, padding: 14 },
   chip: { backgroundColor: '#E8EAF9', borderRadius: 99, marginRight: 8, paddingHorizontal: 14, paddingVertical: 8 },
   chipOn: { backgroundColor: '#0B6B3A' },

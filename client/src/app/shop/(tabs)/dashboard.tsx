@@ -1,6 +1,8 @@
 import { router } from 'expo-router';
 import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/common/Button';
+import { RoleHeader } from '@/components/common/RoleHeader';
 import { DashboardCard } from '@/components/shop/DashboardCard';
 import { stockState } from '@/features/shop/shopTypes';
 import { useDashboard } from '@/features/shop/useDashboard';
@@ -10,7 +12,9 @@ export default function ShopDashboard() {
   if (d.loading) return <ActivityIndicator color="#138A43" size="large" style={{ flex: 1 }} />;
 
   return (
-    <ScrollView contentContainerStyle={styles.screen} style={{ backgroundColor: '#F4F5FB' }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+      <View style={styles.fixedHeader}><RoleHeader location={d.shop?.address ?? 'Shop location'} role="shop" /></View>
+      <ScrollView contentContainerStyle={styles.screen} style={{ backgroundColor: '#F4F5FB' }}>
       {d.error && <TouchableOpacity onPress={d.reload}><Text style={styles.error}>{d.error} - tap to retry</Text></TouchableOpacity>}
 
       <View style={styles.hero}>
@@ -25,7 +29,7 @@ export default function ShopDashboard() {
         </View>
       </View>
 
-      <Text style={styles.h2}>Today's Pulse</Text>
+      <Text style={styles.h2}>Today&apos;s Pulse</Text>
       <View style={styles.grid}>
         <DashboardCard note="Completed today" title="Total Sales" value={`LKR ${d.stats.sales.toLocaleString('en-US')}`} />
         <DashboardCard note={`${d.stats.fresh} new, ${d.stats.packing} preparing`} title="Active Orders" value={`${d.stats.active} pending`} />
@@ -66,11 +70,14 @@ export default function ShopDashboard() {
       ))}
 
       <Button label="View Daily Reports" onPress={() => router.push('/shop/reports')} style={{ marginTop: 16 }} />
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { backgroundColor: '#F4F5FB', flex: 1 },
+  fixedHeader: { backgroundColor: '#F4F5FB', paddingHorizontal: 16, paddingTop: 8 },
   screen: { gap: 8, padding: 14, paddingBottom: 40 },
   error: { color: '#E11D48' },
   hero: { backgroundColor: '#E3F6EA', borderRadius: 16, gap: 8, padding: 16 },
