@@ -1,27 +1,55 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RoleHeader } from '@/components/common/RoleHeader';
 import { PickupReminderCard } from '@/components/customer/PickupReminderCard';
 
 export default function CustomerDashboard() {
+  const [isShopDataVisible, setShopDataVisible] = useState(false);
+
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <View style={styles.fixedHeader}>
         <RoleHeader role="customer" location="Add your neighborhood" />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
-        <PickupReminderCard />
-        <View style={styles.shopCard}>
-        <View style={styles.shopHeader}>
-          <View style={styles.readyDot} />
-          <Text style={styles.readyText}>Pickup Ready</Text>
-          <Text style={styles.distance}>0.8 km away</Text>
+        
+        <View style={styles.topCardsRow}>
+          <TouchableOpacity style={styles.squareShopCard} onPress={() => setShopDataVisible(true)}>
+            <ImageBackground source={require('../../../../assets/images/img4.jpg')} style={styles.bgImage} imageStyle={styles.bgImageStyle}>
+              <View style={styles.overlay}>
+                <Text style={styles.squareTitleWhite}>Shop Data</Text>
+                <Text style={styles.squareSubtitleWhite}>Silva&apos;s Grocery</Text>
+              </View>
+            </ImageBackground>
+          </TouchableOpacity>
+          <PickupReminderCard />
         </View>
-        <Text style={styles.shopName}>Silva&apos;s Corner Grocery</Text>
-        <Text style={styles.shopMeta}>Peradeniya Rd, Kandy · Open for pickup</Text>
-        <Text style={styles.pickup}><Ionicons color="#138A43" name="time-outline" size={14} /> 5:00 PM Pickup</Text>
-        </View>
+
+        <Modal visible={isShopDataVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShopDataVisible(false)}>
+          <View style={styles.modalScreen}>
+             <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={() => setShopDataVisible(false)}>
+                  <Text style={styles.cancel}>Close</Text>
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Pickup Shop Data</Text>
+                <View style={{ width: 40 }} />
+             </View>
+             <View style={{ padding: 16 }}>
+                <View style={styles.shopCard}>
+                  <View style={styles.shopHeader}>
+                    <View style={styles.readyDot} />
+                    <Text style={styles.readyText}>Pickup Ready</Text>
+                    <Text style={styles.distance}>0.8 km away</Text>
+                  </View>
+                  <Text style={styles.shopName}>Silva&apos;s Corner Grocery</Text>
+                  <Text style={styles.shopMeta}>Peradeniya Rd, Kandy · Open for pickup</Text>
+                  <Text style={styles.pickup}><Ionicons color="#138A43" name="time-outline" size={14} /> 5:00 PM Pickup</Text>
+                </View>
+             </View>
+          </View>
+        </Modal>
 
         <View style={styles.searchBox}>
         <Ionicons color="#98A2B3" name="search-outline" size={18} />
@@ -53,6 +81,20 @@ const styles = StyleSheet.create({
   safeArea: { backgroundColor: '#F7F9F8', flex: 1 },
   fixedHeader: { backgroundColor: '#F7F9F8', paddingHorizontal: 16, paddingTop: 8 },
   content: { gap: 14, padding: 16, paddingBottom: 34 },
+  
+  topCardsRow: { flexDirection: 'row', gap: 12 },
+  squareShopCard: { flex: 1, aspectRatio: 1, minHeight: 110, borderRadius: 14 },
+  bgImage: { flex: 1, width: '100%', height: '100%', justifyContent: 'center' },
+  bgImageStyle: { borderRadius: 14 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 14, padding: 12, paddingBottom: 16, alignItems: 'center', justifyContent: 'flex-end', gap: 2 },
+  squareTitleWhite: { color: '#ffffff', fontSize: 13, fontWeight: '800', textAlign: 'center' },
+  squareSubtitleWhite: { color: '#f3f4f6', fontSize: 11, textAlign: 'center' },
+  
+  modalScreen: { backgroundColor: '#F7F9F8', flex: 1 },
+  modalHeader: { alignItems: 'center', backgroundColor: '#fff', borderBottomColor: '#E4E8EF', borderBottomWidth: 1, flexDirection: 'row', justifyContent: 'space-between', padding: 16 },
+  cancel: { color: '#667085', fontSize: 14 },
+  modalTitle: { color: '#172B24', fontSize: 16, fontWeight: '800' },
+
   shopCard: { backgroundColor: '#F0F6FF', borderColor: '#D9E9FF', borderRadius: 14, borderWidth: 1, padding: 14 },
   shopHeader: { alignItems: 'center', flexDirection: 'row', gap: 5 },
   readyDot: { backgroundColor: '#138A43', borderRadius: 4, height: 8, width: 8 },
