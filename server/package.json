@@ -4,12 +4,12 @@
   "private": true,
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "node init && tsx watch src/server.ts",
     "seed:demo": "tsx src/scripts/seedDemo.ts",
     "test": "tsx --test tests/checkout.test.ts",
     "test:atlas": "node run-isolated-tests.cjs",
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
+    "build": "node init && tsc -p tsconfig.json",
+    "start": "node init && node dist/server.js",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
