@@ -5,9 +5,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { RoleHeader } from '@/components/common/RoleHeader';
 import { PickupReminderCard } from '@/components/customer/PickupReminderCard';
 import { getShops, getProducts } from '@/features/customer/customerApi';
+import { useRouter } from 'expo-router';
 import type { Shop, Product } from '@/features/customer/customerTypes';
+import { useCart } from '@/features/customer/useCart';
 
 export default function CustomerDashboard() {
+  const router = useRouter();
+  const { addItem } = useCart();
   const [isShopDataVisible, setShopDataVisible] = useState(false);
   const [shops, setShops] = useState<Shop[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -135,21 +139,25 @@ export default function CustomerDashboard() {
         ) : products.length > 0 ? (
           <View style={{ gap: 12 }}>
             {products.map(p => (
-              <View key={p.id} style={styles.productCard}>
-                {p.imageUrl ? (
-                   <Image source={{ uri: p.imageUrl }} style={styles.productImage} />
-                ) : (
-                   <View style={styles.productImagePlaceholder}><Ionicons name="image-outline" size={24} color="#98A2B3" /></View>
-                )}
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.productName}>{p.name}</Text>
-                  <Text style={styles.productCategory}>{p.category}</Text>
-                  <Text style={styles.productPrice}>LKR {p.price}</Text>
-                </View>
-                <TouchableOpacity style={styles.addButton}>
-                  <Ionicons name="add" size={16} color="#fff" />
+                <TouchableOpacity 
+                  key={p.id} 
+                  style={styles.productCard}
+                  onPress={() => router.push({ pathname: '/customer/product/[id]', params: { id: p.id, name: p.name, price: p.price, stock: p.stock, category: p.category, imageUrl: p.imageUrl || '', shopName: selectedShop?.name || 'Local Grocery' } })}
+                >
+                  {p.imageUrl ? (
+                     <Image source={{ uri: p.imageUrl }} style={styles.productImage} />
+                  ) : (
+                     <View style={styles.productImagePlaceholder}><Ionicons name="image-outline" size={24} color="#98A2B3" /></View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.productName}>{p.name}</Text>
+                    <Text style={styles.productCategory}>{p.category}</Text>
+                    <Text style={styles.productPrice}>LKR {p.price}</Text>
+                  </View>
+                  <TouchableOpacity style={styles.addButton} onPress={() => addItem(p, 1, undefined, selectedShop?.name)}>
+                    <Ionicons name="add" size={16} color="#fff" />
+                  </TouchableOpacity>
                 </TouchableOpacity>
-              </View>
             ))}
           </View>
         ) : (

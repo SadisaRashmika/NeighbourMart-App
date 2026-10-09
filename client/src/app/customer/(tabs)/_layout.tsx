@@ -14,6 +14,7 @@ export default function CustomerTabsLayout() {
       <Tabs.Screen name="cart" options={{ title: 'Cart', tabBarIcon: ({ color, size }) => <Ionicons color={color} name="cart-outline" size={size} /> }} />
       <Tabs.Screen name="orders" options={{ title: 'Orders', tabBarIcon: ({ color, size }) => <Ionicons color={color} name="receipt-outline" size={size} /> }} />
       <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: ({ color, size }) => <Ionicons color={color} name="settings-outline" size={size} /> }} />
+      <Tabs.Screen name="product/[id]" options={{ href: null, title: 'Product Detail' }} />
     </Tabs>
   );
 }
