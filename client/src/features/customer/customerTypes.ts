@@ -16,9 +16,20 @@ export type Product = {
   imageUrl?: string;
 };
 
+export type SubstitutePreference = {
+  enabled: boolean;
+  type?: 'auto' | 'manual';
+  title?: string;
+  desc?: string;
+  descType?: 'success' | 'warning' | 'neutral';
+  note?: string;
+};
+
 export type CartItem = {
   product: Product;
   quantity: number;
+  substitute?: SubstitutePreference;
+  shopName?: string;
 };
 
 export type CustomerOrder = {
