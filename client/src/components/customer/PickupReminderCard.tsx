@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground } from 'react-native';
 import { useAuth } from '@/features/auth/useAuth';
 import { deletePickupReminder, getPickupReminder, savePickupReminder, type ReminderItem } from '@/features/customer/reminderApi';
 
@@ -95,35 +95,34 @@ export function PickupReminderCard() {
   const itemCountLabel = items.length === 1 ? '1 item saved' : `${items.length} items saved`;
 
   return (
-    <View style={styles.card}>
-      <View style={styles.cardTop}><View style={styles.iconWrap}><Ionicons color="#138A43" name="list-outline" size={19} /></View><View style={styles.copy}><Text style={styles.title}>Pickup reminder list</Text><Text style={styles.subtitle}>{isLoading ? 'Loading your saved list...' : items.length ? `${itemCountLabel} for your next shop visit` : 'Save items so nothing is forgotten at pickup'}</Text></View><TouchableOpacity accessibilityLabel="Edit pickup reminder list" onPress={openEditor} style={styles.editButton}><Ionicons color="#138A43" name={items.length ? 'create-outline' : 'add'} size={19} /></TouchableOpacity></View>
-      {isLoading ? <ActivityIndicator color="#138A43" size="small" style={styles.loader} /> : items.length ? <View style={styles.preview}>{previewItems.map((item) => <View key={item.id} style={styles.previewRow}><Ionicons color="#138A43" name="checkmark-circle-outline" size={15} /><Text style={styles.previewName} numberOfLines={1}>{item.name}</Text><Text style={styles.previewQuantity}>x{item.quantity}</Text></View>)}{items.length > 3 ? <Text style={styles.moreText}>+{items.length - 3} more item{items.length - 3 === 1 ? '' : 's'}</Text> : null}</View> : <TouchableOpacity onPress={openEditor} style={styles.emptyAction}><Text style={styles.emptyActionText}>Create your first list</Text><Ionicons color="#138A43" name="arrow-forward" size={15} /></TouchableOpacity>}
+    <>
+      <TouchableOpacity accessibilityLabel="Edit pickup reminder list" onPress={openEditor} style={styles.squareCard}>
+        <ImageBackground source={require('../../../assets/images/img5.jpg')} style={styles.bgImage} imageStyle={styles.bgImageStyle}>
+          <View style={styles.overlay}>
+            <Text style={styles.squareTitleWhite}>Reminder List</Text>
+            <Text style={styles.squareSubtitleWhite}>
+              {isLoading ? 'Loading...' : items.length ? `${items.length} items` : 'Empty'}
+            </Text>
+          </View>
+        </ImageBackground>
+      </TouchableOpacity>
       <Modal animationType="slide" presentationStyle="pageSheet" visible={isModalVisible} onRequestClose={() => setIsModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalScreen}>
           <View style={styles.modalHeader}><TouchableOpacity onPress={() => setIsModalVisible(false)}><Text style={styles.cancel}>Cancel</Text></TouchableOpacity><Text style={styles.modalTitle}>Pickup reminder list</Text><TouchableOpacity disabled={isSaving} onPress={saveList}><Text style={styles.save}>{isSaving ? 'Saving...' : 'Save'}</Text></TouchableOpacity></View>
           <ScrollView contentContainerStyle={styles.modalContent} keyboardShouldPersistTaps="handled"><Text style={styles.modalIntro}>Keep a reusable list of things you want to collect from the shop.</Text><View style={styles.addRow}><TextInput autoCapitalize="sentences" onChangeText={setNewItemName} onSubmitEditing={addItem} placeholder="Add an item, e.g. milk" placeholderTextColor="#98A2B3" returnKeyType="done" style={styles.addInput} value={newItemName} /><TouchableOpacity accessibilityLabel="Add item" disabled={!newItemName.trim()} onPress={addItem} style={[styles.addButton, !newItemName.trim() && styles.disabledButton]}><Ionicons color="#fff" name="add" size={21} /></TouchableOpacity></View>{draftItems.length ? <View style={styles.itemList}>{draftItems.map((item) => <View key={item.id} style={styles.itemRow}><TextInput onChangeText={(name) => updateItem(item.id, { name })} style={styles.itemInput} value={item.name} /><View style={styles.quantityControl}><TouchableOpacity accessibilityLabel={`Decrease ${item.name} quantity`} disabled={item.quantity <= 1} onPress={() => updateItem(item.id, { quantity: Math.max(1, item.quantity - 1) })}><Ionicons color={item.quantity <= 1 ? '#D0D5DD' : '#138A43'} name="remove-circle-outline" size={22} /></TouchableOpacity><Text style={styles.quantity}>{item.quantity}</Text><TouchableOpacity accessibilityLabel={`Increase ${item.name} quantity`} disabled={item.quantity >= 99} onPress={() => updateItem(item.id, { quantity: Math.min(99, item.quantity + 1) })}><Ionicons color={item.quantity >= 99 ? '#D0D5DD' : '#138A43'} name="add-circle-outline" size={22} /></TouchableOpacity></View><TouchableOpacity accessibilityLabel={`Delete ${item.name}`} onPress={() => removeItem(item.id)}><Ionicons color="#B42318" name="trash-outline" size={19} /></TouchableOpacity></View>)}</View> : <View style={styles.emptyModal}><Ionicons color="#8ACFA2" name="basket-outline" size={34} /><Text style={styles.emptyModalTitle}>Your list is empty</Text><Text style={styles.emptyModalText}>Add groceries above and save them for your next pickup.</Text></View>}{draftItems.length ? <TouchableOpacity onPress={() => setDraftItems([])} style={styles.clearButton}><Text style={styles.clearText}>Clear all items</Text></TouchableOpacity> : null}<TouchableOpacity disabled={isSaving || !draftItems.length} onPress={saveList} style={[styles.fullSave, (!draftItems.length || isSaving) && styles.disabledSave]}><Text style={styles.fullSaveText}>{isSaving ? 'Saving list...' : 'Save reminder list'}</Text></TouchableOpacity>{items.length ? <TouchableOpacity disabled={isSaving} onPress={confirmDeleteList} style={styles.deleteList}><Text style={styles.deleteListText}>Delete saved list</Text></TouchableOpacity> : null}</ScrollView>
         </KeyboardAvoidingView>
       </Modal>
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#F1FAF4', borderColor: '#CBEBD5', borderRadius: 14, borderWidth: 1, padding: 13 },
-  cardTop: { alignItems: 'center', flexDirection: 'row', gap: 10 },
-  iconWrap: { alignItems: 'center', backgroundColor: '#D4F1DE', borderRadius: 20, height: 38, justifyContent: 'center', width: 38 },
-  copy: { flex: 1 },
-  title: { color: '#17603A', fontSize: 14, fontWeight: '800' },
-  subtitle: { color: '#667085', fontSize: 11, marginTop: 3 },
-  editButton: { alignItems: 'center', backgroundColor: '#fff', borderRadius: 19, height: 36, justifyContent: 'center', width: 36 },
-  loader: { alignSelf: 'flex-start', marginLeft: 48, marginTop: 10 },
-  preview: { gap: 7, marginLeft: 48, marginTop: 11 },
-  previewRow: { alignItems: 'center', flexDirection: 'row', gap: 6 },
-  previewName: { color: '#344054', flex: 1, fontSize: 12 },
-  previewQuantity: { color: '#13753F', fontSize: 11, fontWeight: '800' },
-  moreText: { color: '#667085', fontSize: 10, marginTop: 1 },
-  emptyAction: { alignItems: 'center', flexDirection: 'row', gap: 5, marginLeft: 48, marginTop: 10 },
-  emptyActionText: { color: '#138A43', fontSize: 11, fontWeight: '800' },
+  squareCard: { flex: 1, aspectRatio: 1, minHeight: 110, borderRadius: 14 },
+  bgImage: { flex: 1, width: '100%', height: '100%', justifyContent: 'center' },
+  bgImageStyle: { borderRadius: 14 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 14, padding: 12, paddingBottom: 16, alignItems: 'center', justifyContent: 'flex-end', gap: 2 },
+  squareTitleWhite: { color: '#ffffff', fontSize: 13, fontWeight: '800', textAlign: 'center' },
+  squareSubtitleWhite: { color: '#f3f4f6', fontSize: 11, textAlign: 'center' },
   modalScreen: { backgroundColor: '#F7F9F8', flex: 1 },
   modalHeader: { alignItems: 'center', backgroundColor: '#fff', borderBottomColor: '#E4E8EF', borderBottomWidth: 1, flexDirection: 'row', justifyContent: 'space-between', padding: 16 },
   cancel: { color: '#667085', fontSize: 14 },
