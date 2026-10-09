@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { ActionButton, Thumb } from '@/components/shop/ShopUI';
 import { T, emojiFor, money, shadow } from '@/components/shop/shopTheme';
 import { createStockItem, updateStockItem } from '@/features/shop/shopApi';
@@ -9,14 +10,20 @@ import { createStockItem, updateStockItem } from '@/features/shop/shopApi';
 const CATEGORIES = ['Dairy', 'Fresh Produce', 'Pulses', 'Grains', 'Biscuits', 'Snacks', 'Beverages'];
 
 export default function ProductForm() {
-  const p = useLocalSearchParams<{ id?: string; name?: string; category?: string; price?: string; stock?: string }>();
+  const p = useLocalSearchParams<{ id?: string; name?: string; category?: string; price?: string; stock?: string; imageUrl?: string }>();
   const editing = Boolean(p.id);
   const [name, setName] = useState(p.name ?? '');
   const [category, setCategory] = useState(p.category ?? '');
   const [price, setPrice] = useState(p.price ?? '');
   const [stock, setStock] = useState(p.stock ?? '0');
+  const [imageUrl, setImageUrl] = useState(p.imageUrl ?? '');
   const [errors, setErrors] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', allowsEditing: true, aspect: [1, 1], quality: 0.5 });
+    if (!result.canceled) setImageUrl(result.assets[0].uri);
+  };
 
   async function save() {
     const problems: string[] = [];
@@ -26,7 +33,7 @@ export default function ProductForm() {
     if (!/^\d+$/.test(stock.trim())) problems.push('Stock must be a whole number, 0 or more.');
     setErrors(problems);
     if (problems.length) return;
-    const data = { name: name.trim(), category: category.trim(), price: Number(price), stock: Number(stock), available: true };
+    const data = { name: name.trim(), category: category.trim(), price: Number(price), stock: Number(stock), available: true, imageUrl };
     try {
       setSaving(true);
       if (editing && p.id) await updateStockItem(p.id, data); else await createStockItem(data);
@@ -49,7 +56,10 @@ export default function ProductForm() {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ backgroundColor: T.bg, flex: 1 }}>
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
         <View style={[styles.preview, shadow]}>
-          <Thumb emoji={emojiFor(category, name)} size={64} />
+          <TouchableOpacity onPress={pickImage} style={{ alignItems: 'center', gap: 4 }}>
+            <Thumb emoji={emojiFor(category, name)} imageUrl={imageUrl} size={64} />
+            <Text style={{ fontSize: 10, color: T.green2, fontWeight: '700' }}>Add Photo</Text>
+          </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.cat}>{(category || 'CATEGORY').toUpperCase()}</Text>
             <Text numberOfLines={1} style={styles.pName}>{name || 'Product name'}</Text>

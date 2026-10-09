@@ -7,5 +7,10 @@ export default function ShopLayout() {
   if (isLoading) return <LoadingIndicator />;
   if (!token || !user) return <Redirect href="/(auth)/login" />;
   if (user.role !== 'shop') return <Redirect href="/customer/dashboard" />;
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="product-form" options={{ presentation: 'modal' }} />
+    </Stack>
+  );
 }

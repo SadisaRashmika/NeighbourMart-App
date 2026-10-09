@@ -18,7 +18,7 @@ export function StockItemCard({ item, onStep, onToggle, onEdit, onDelete }: Prop
   return (
     <View style={[styles.card, shadow, { borderColor: look.border }]}>
       <View style={styles.row}>
-        <Thumb emoji={emojiFor(item.category, item.name)} />
+        <Thumb emoji={emojiFor(item.category, item.name)} imageUrl={item.imageUrl} />
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={styles.category}>{item.category.toUpperCase()}</Text>
           <Text numberOfLines={2} style={styles.name}>{item.name}</Text>

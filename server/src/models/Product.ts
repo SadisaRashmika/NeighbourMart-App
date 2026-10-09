@@ -8,6 +8,7 @@ const productSchema = new Schema(
     price: { type: Number, required: true, min: 0 },
     stock: { type: Number, required: true, min: 0, default: 0 },
     available: { type: Boolean, default: true },
+    imageUrl: { type: String, trim: true },
     lastUpdatedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

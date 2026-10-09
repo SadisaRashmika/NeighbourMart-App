@@ -17,6 +17,7 @@ export type StockItem = {
   price: number;
   stock: number;
   available: boolean;
+  imageUrl?: string;
 };
 
 export type StockInput = Omit<StockItem, 'id'>;
