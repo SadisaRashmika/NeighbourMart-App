@@ -1,42 +1,55 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Button } from '@/components/common/Button';
 import type { OrderStatus, ShopOrder } from '@/features/shop/shopTypes';
+import { ActionButton, Pill, type IconName } from './ShopUI';
+import { T, emojiFor, money, shadow, timeAgo } from './shopTheme';
 
-type Props = {
-  order: ShopOrder;
-  onAdvance: (next: OrderStatus) => void;
-  onCancel: () => void;
-  onDelete: () => void;
+type Props = { order: ShopOrder; onAdvance: (next: OrderStatus) => void; onCancel: () => void; onDelete: () => void };
+
+const NEXT: Partial<Record<OrderStatus, { label: string; to: OrderStatus; icon: IconName }>> = {
+  new: { label: 'Accept Order', to: 'preparing', icon: 'checkmark-circle-outline' },
+  preparing: { label: 'Mark Ready', to: 'ready', icon: 'bag-check-outline' },
+  ready: { label: 'Complete Handoff', to: 'completed', icon: 'hand-left-outline' },
 };
-
-const NEXT: Partial<Record<OrderStatus, { label: string; to: OrderStatus }>> = {
-  new: { label: 'Accept Order', to: 'preparing' },
-  preparing: { label: 'Mark Ready', to: 'ready' },
-  ready: { label: 'Complete Handoff', to: 'completed' },
+const STATUS: Record<OrderStatus, { text: string; fg: string; bg: string }> = {
+  new: { text: 'New', fg: T.green2, bg: T.mint }, preparing: { text: 'Preparing', fg: T.amber, bg: T.amberBg },
+  ready: { text: 'Ready', fg: '#1D4ED8', bg: '#DBEAFE' }, completed: { text: 'Completed', fg: T.slate, bg: '#EEF0F4' },
+  cancelled: { text: 'Cancelled', fg: T.red, bg: T.redBg },
 };
 
 export function ShopOrderCard({ order, onAdvance, onCancel, onDelete }: Props) {
   const next = NEXT[order.status];
   const closed = order.status === 'completed' || order.status === 'cancelled';
+  const st = STATUS[order.status];
   return (
-    <View style={styles.card}>
-      <View style={styles.row}>
-        <Text style={styles.number}>#{order.orderNumber}</Text>
-        <Text style={styles.name}>{order.customerName}</Text>
+    <View style={[styles.card, shadow]}>
+      <View style={styles.head}>
+        <View style={{ flex: 1, gap: 6 }}>
+          <View style={styles.row}>
+            <Text style={styles.number}>#{order.orderNumber}</Text>
+            <Text numberOfLines={1} style={styles.name}>{order.customerName}</Text>
+          </View>
+          <Text style={styles.mute}>Pickup order - {timeAgo(order.createdAt) || 'recently'}</Text>
+        </View>
+        <Pill bg={st.bg} fg={st.fg} text={st.text} />
       </View>
+
       <View style={styles.items}>
         {order.items.map((i) => (
           <View key={i.name} style={styles.row}>
-            <Text style={{ flex: 1 }}>{i.quantity}x {i.name}</Text>
-            <Text>LKR {(i.quantity * i.unitPrice).toLocaleString('en-US')}</Text>
+            <Text style={styles.qtyChip}>{i.quantity}x</Text>
+            <Text style={{ fontSize: 14 }}>{emojiFor('', i.name)}</Text>
+            <Text numberOfLines={1} style={styles.itemName}>{i.name}</Text>
+            <Text style={styles.itemPrice}>{money(i.quantity * i.unitPrice)}</Text>
           </View>
         ))}
       </View>
-      <View style={[styles.row, { justifyContent: 'space-between', marginBottom: 12 }]}>
-        <Text style={styles.mute}>Pay at pickup</Text>
-        <Text style={styles.total}>LKR {order.total.toLocaleString('en-US')}</Text>
+
+      <View style={[styles.row, { justifyContent: 'space-between' }]}>
+        <Text style={styles.mute}>Pay at Pickup: <Text style={styles.bold}>Counter Cash</Text></Text>
+        <Text style={styles.total}>{money(order.total)}</Text>
       </View>
-      {next && <Button label={next.label} onPress={() => onAdvance(next.to)} />}
+
+      {next && <ActionButton icon={next.icon} label={next.label} onPress={() => onAdvance(next.to)} />}
       {!closed && (
         <TouchableOpacity onPress={onCancel} style={styles.link}><Text style={styles.danger}>Cancel order</Text></TouchableOpacity>
       )}
@@ -48,13 +61,18 @@ export function ShopOrderCard({ order, onAdvance, onCancel, onDelete }: Props) {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#fff', borderColor: '#E5E7EB', borderRadius: 16, borderWidth: 1, marginBottom: 12, padding: 14 },
+  card: { backgroundColor: T.card, borderRadius: 20, gap: 12, marginBottom: 14, padding: 14 },
+  head: { alignItems: 'flex-start', flexDirection: 'row', gap: 8 },
   row: { alignItems: 'center', flexDirection: 'row', gap: 8 },
-  number: { backgroundColor: '#FDE9D0', borderRadius: 8, fontWeight: '700', overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 3 },
-  name: { fontSize: 16, fontWeight: '800' },
-  items: { backgroundColor: '#F4F5FB', borderRadius: 12, gap: 4, marginVertical: 10, padding: 10 },
-  mute: { color: '#667085' },
-  total: { color: '#0B6B3A', fontSize: 18, fontWeight: '800' },
-  link: { alignItems: 'center', marginTop: 10, padding: 6 },
-  danger: { color: '#E11D48', fontWeight: '700' },
+  number: { backgroundColor: '#FDE9D0', borderRadius: 8, color: '#92400E', fontSize: 12, fontWeight: '800', overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 3 },
+  name: { color: T.ink, flexShrink: 1, fontSize: 17, fontWeight: '800' },
+  mute: { color: T.mute, fontSize: 12 },
+  bold: { color: T.ink, fontWeight: '800' },
+  items: { backgroundColor: '#F4F5FB', borderRadius: 14, gap: 8, padding: 12 },
+  qtyChip: { backgroundColor: '#FDE9D0', borderRadius: 6, color: '#92400E', fontSize: 11, fontWeight: '800', overflow: 'hidden', paddingHorizontal: 6, paddingVertical: 2 },
+  itemName: { color: T.ink, flex: 1, fontSize: 14 },
+  itemPrice: { color: T.mute, fontSize: 13 },
+  total: { color: T.green, fontSize: 20, fontWeight: '800' },
+  link: { alignItems: 'center', padding: 4 },
+  danger: { color: T.red, fontWeight: '800' },
 });
