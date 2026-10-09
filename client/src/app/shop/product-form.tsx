@@ -1,8 +1,12 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
-import { Button } from '@/components/common/Button';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActionButton, Thumb } from '@/components/shop/ShopUI';
+import { T, emojiFor, money, shadow } from '@/components/shop/shopTheme';
 import { createStockItem, updateStockItem } from '@/features/shop/shopApi';
+
+const CATEGORIES = ['Dairy', 'Fresh Produce', 'Pulses', 'Grains', 'Biscuits', 'Snacks', 'Beverages'];
 
 export default function ProductForm() {
   const p = useLocalSearchParams<{ id?: string; name?: string; category?: string; price?: string; stock?: string }>();
@@ -17,7 +21,7 @@ export default function ProductForm() {
   async function save() {
     const problems: string[] = [];
     if (!name.trim()) problems.push('Enter the product name.');
-    if (!category.trim()) problems.push('Enter a category, e.g. Dairy.');
+    if (!category.trim()) problems.push('Choose or type a category.');
     if (price.trim() === '' || Number.isNaN(Number(price)) || Number(price) < 0) problems.push('Price must be a number, 0 or more.');
     if (!/^\d+$/.test(stock.trim())) problems.push('Stock must be a whole number, 0 or more.');
     setErrors(problems);
@@ -27,34 +31,68 @@ export default function ProductForm() {
       setSaving(true);
       if (editing && p.id) await updateStockItem(p.id, data); else await createStockItem(data);
       router.back();
-    } catch (e) {
-      Alert.alert('Could not save', e instanceof Error ? e.message : 'Please try again.');
-    } finally { setSaving(false); }
+    } catch (e) { Alert.alert('Could not save', e instanceof Error ? e.message : 'Please try again.'); }
+    finally { setSaving(false); }
   }
 
+  const field = (label: string, icon: keyof typeof Ionicons.glyphMap, props: React.ComponentProps<typeof TextInput>) => (
+    <View style={{ gap: 6 }}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.inputWrap}>
+        <Ionicons color={T.mute} name={icon} size={18} />
+        <TextInput placeholderTextColor={T.mute} {...props} style={styles.input} />
+      </View>
+    </View>
+  );
+
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ backgroundColor: T.bg, flex: 1 }}>
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>{editing ? 'Edit item' : 'Add new item'}</Text>
-        <Text style={styles.label}>Product name</Text>
-        <TextInput onChangeText={setName} placeholder="Highland Fresh Milk 1L" style={styles.input} value={name} />
-        <Text style={styles.label}>Category</Text>
-        <TextInput onChangeText={setCategory} placeholder="Dairy" style={styles.input} value={category} />
-        <Text style={styles.label}>Price (LKR)</Text>
-        <TextInput keyboardType="decimal-pad" onChangeText={setPrice} placeholder="480" style={styles.input} value={price} />
-        <Text style={styles.label}>Units in stock</Text>
-        <TextInput keyboardType="number-pad" onChangeText={setStock} style={styles.input} value={stock} />
+        <View style={[styles.preview, shadow]}>
+          <Thumb emoji={emojiFor(category, name)} size={64} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cat}>{(category || 'CATEGORY').toUpperCase()}</Text>
+            <Text numberOfLines={1} style={styles.pName}>{name || 'Product name'}</Text>
+            <Text style={styles.pPrice}>{price ? money(Number(price) || 0) : 'LKR 0'} - {stock || 0} in stock</Text>
+          </View>
+        </View>
+
+        {field('Product name', 'pricetag-outline', { onChangeText: setName, placeholder: 'Highland Fresh Milk 1L', value: name })}
+        <View style={{ gap: 6 }}>
+          <Text style={styles.label}>Category</Text>
+          <View style={styles.chips}>
+            {CATEGORIES.map((c) => (
+              <TouchableOpacity key={c} onPress={() => setCategory(c)} style={[styles.chip, category === c && styles.chipOn]}>
+                <Text style={[styles.chipText, category === c && { color: '#fff' }]}>{c}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {field('', 'list-outline', { onChangeText: setCategory, placeholder: 'Or type a category', value: category })}
+        </View>
+        {field('Price (LKR)', 'cash-outline', { keyboardType: 'decimal-pad', onChangeText: setPrice, placeholder: '480', value: price })}
+        {field('Units in stock', 'cube-outline', { keyboardType: 'number-pad', onChangeText: setStock, value: stock })}
+
         {errors.map((m) => <Text key={m} style={styles.error}>{m}</Text>)}
-        <Button disabled={saving} label={saving ? 'Saving...' : editing ? 'Save changes' : 'Add item'} onPress={save} style={{ marginTop: 16 }} />
+        <ActionButton disabled={saving} icon="checkmark-circle-outline" label={saving ? 'Saving...' : editing ? 'Save changes' : 'Add item'} onPress={save} style={styles.save} />
+        <ActionButton label="Cancel" onPress={() => router.back()} tone="soft" />
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  form: { padding: 18 },
-  title: { fontSize: 20, fontWeight: '800', marginBottom: 12 },
-  label: { color: '#475467', fontSize: 13, marginTop: 10 },
-  input: { backgroundColor: '#fff', borderColor: '#D1FADF', borderRadius: 12, borderWidth: 1, marginTop: 4, padding: 12 },
-  error: { color: '#E11D48', marginTop: 6 },
+  form: { gap: 14, padding: 16, paddingBottom: 40 },
+  preview: { alignItems: 'center', backgroundColor: '#fff', borderRadius: 20, flexDirection: 'row', gap: 14, padding: 14 },
+  cat: { color: T.mute, fontSize: 10, fontWeight: '700', letterSpacing: 0.6 },
+  pName: { color: T.ink, fontSize: 17, fontWeight: '800' },
+  pPrice: { color: T.slate, fontSize: 13 },
+  label: { color: T.slate, fontSize: 13, fontWeight: '700' },
+  inputWrap: { alignItems: 'center', backgroundColor: '#fff', borderColor: T.line, borderRadius: 14, borderWidth: 1, flexDirection: 'row', gap: 8, paddingHorizontal: 12 },
+  input: { color: T.ink, flex: 1, paddingVertical: 13 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { backgroundColor: T.lav, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 8 },
+  chipOn: { backgroundColor: T.green },
+  chipText: { color: T.ink, fontSize: 12, fontWeight: '800' },
+  error: { color: T.red },
+  save: { backgroundColor: T.green, borderColor: T.green, minHeight: 54 },
 });
