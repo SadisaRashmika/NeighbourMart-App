@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground } from 'react-native';
 import { useAuth } from '@/features/auth/useAuth';
 import { deletePickupReminder, getPickupReminder, savePickupReminder, type ReminderItem } from '@/features/customer/reminderApi';
 
@@ -90,9 +90,6 @@ export function PickupReminderCard() {
       setIsSaving(false);
     }
   }
-
-  const previewItems = items.slice(0, 3);
-  const itemCountLabel = items.length === 1 ? '1 item saved' : `${items.length} items saved`;
 
   return (
     <>

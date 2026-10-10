@@ -1,5 +1,5 @@
 import { apiRequest } from '@/services/api';
-import type { OrderStatus, ShopOrder, ShopProfile, ShopProfileUpdate, StockInput, StockItem } from './shopTypes';
+import type { OrderStatus, ShopOrder, ShopOrderDetails, ShopProfile, ShopProfileUpdate, StockInput, StockItem } from './shopTypes';
 
 const json = (method: string, body: unknown) => ({ method, body: JSON.stringify(body) });
 
@@ -20,3 +20,10 @@ export const createShopOrder = (customerName: string, items: { productId: string
 export const updateOrderStatus = (id: string, status: OrderStatus) =>
   apiRequest<ShopOrder>(`/api/orders/${id}/status`, json('PATCH', { status }));
 export const deleteShopOrder = (id: string) => apiRequest<{ id: string }>(`/api/orders/${id}`, { method: 'DELETE' });
+export const getShopOrder = (id: string) => apiRequest<ShopOrderDetails>(`/api/orders/shop/${id}`);
+export const proposeOrderSubstitution = (id: string, productId: string, replacementId: string, note?: string) =>
+  apiRequest<ShopOrderDetails>(`/api/orders/${id}/items/${productId}/substitution`, json('POST', { replacementId, note }));
+export const verifyOrderPickup = (id: string, value: string) =>
+  apiRequest<ShopOrderDetails>(`/api/orders/${id}/verify-pickup`, json('POST', { value }));
+export const confirmOrderPayment = (id: string) => apiRequest<ShopOrderDetails>(`/api/orders/${id}/payment`, { method: 'PATCH' });
+export const completeOrderHandoff = (id: string) => apiRequest<ShopOrderDetails>(`/api/orders/${id}/complete-handoff`, { method: 'POST' });

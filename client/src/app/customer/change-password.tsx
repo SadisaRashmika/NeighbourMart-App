@@ -21,8 +21,10 @@ export default function ChangePassword() {
 
   useEffect(() => {
     if (!token) {
-      setError('Your session has expired. Please sign in again.');
-      setIsLoading(false);
+      void Promise.resolve().then(() => {
+        setError('Your session has expired. Please sign in again.');
+        setIsLoading(false);
+      });
       return;
     }
 

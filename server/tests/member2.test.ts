@@ -16,6 +16,7 @@ import { checkout, readCart, replaceItem, setCartItem } from '../src/services/ca
 import { setOrderStatus, removeOrder } from '../src/services/orderService.js';
 import { ensurePickupSlots } from '../src/services/member2PickupSlots.js';
 import { quantity, slotStart } from '../src/services/checkoutRules.js';
+import { completeHandoff, confirmPayment, proposeSubstitution, respondToSubstitution, verifyPickup } from '../src/services/orderWorkflowService.js';
 
 let server: Server;
 let url: string, customer: string, owner: string, shop: string, product: string, alternative: string, slot: string;
@@ -142,4 +143,27 @@ test('pickup slots follow owner hours and retain existing bookings', async () =>
   assert.equal(await PickupSlotModel.countDocuments({ shop }), count);
   assert.equal((await PickupSlotModel.findById(slot))!.capacity, 1);
   assert.equal(await PickupSlotModel.countDocuments({ shop, startTime: '16:00', capacity: 4 }), 3);
+});
+
+test('customer and shop complete substitution, tracking, verification and handoff flow', async () => {
+  await setCartItem(customer, product, 1);
+  const created = await checkout(customer, body());
+  await setOrderStatus(shop, created.id, 'preparing');
+  await proposeSubstitution(shop, created.id, product, alternative, 'Fresh alternative from today');
+  assert.equal((await ProductModel.findById(alternative))!.stock, 9);
+  const detail = await fetch(`${url}/api/orders/${created.id}`, { headers: headers(customer) });
+  assert.equal(detail.status, 200);
+  assert.equal((await detail.json()).pendingSubstitutions, 1);
+  await respondToSubstitution(customer, created.id, product, 'approved');
+  await setOrderStatus(shop, created.id, 'ready');
+  const order = await OrderModel.findById(created.id);
+  await assert.rejects(verifyPickup(shop, created.id, 'wrong'), /Invalid pickup/);
+  await verifyPickup(shop, created.id, order!.pickupCode!);
+  await confirmPayment(shop, created.id);
+  await completeHandoff(shop, created.id);
+  const completed = await OrderModel.findById(created.id);
+  assert.equal(completed!.status, 'picked-up');
+  assert.equal(completed!.paymentStatus, 'paid');
+  assert.ok(completed!.timeline.some(event => event.event === 'substitution-approved'));
+  assert.ok(completed!.timeline.some(event => event.event === 'picked-up'));
 });

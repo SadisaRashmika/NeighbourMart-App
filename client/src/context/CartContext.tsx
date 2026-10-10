@@ -29,7 +29,6 @@ export function CartProvider({ children }: PropsWithChildren) {
   const basketRef = useRef(basket);
   const queue = useRef<Promise<unknown>>(Promise.resolve());
   const identity = useRef(user?.id);
-  identity.current = user?.id;
 
   const run = useCallback((action: () => Promise<Basket>) => {
     const customer = identity.current;
@@ -50,10 +49,15 @@ export function CartProvider({ children }: PropsWithChildren) {
   }, []);
   const refresh = useCallback(() => run(getBasket), [run]);
   useEffect(() => {
+    identity.current = user?.id;
     basketRef.current = empty;
-    setBasket(empty);
-    setError('');
-    if (user?.role === 'customer') void refresh().catch(() => undefined);
+    const customer = user?.id;
+    void Promise.resolve().then(() => {
+      if (identity.current !== customer) return;
+      setBasket(empty);
+      setError('');
+      if (user?.role === 'customer') void refresh().catch(() => undefined);
+    });
   }, [user?.id, user?.role, refresh]);
 
   // Preserve the product screens' existing four-argument addItem contract.

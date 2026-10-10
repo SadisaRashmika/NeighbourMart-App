@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { randomBytes, randomInt } from "node:crypto";
 import { CartModel } from "../models/Cart.js";
 import { ProductModel } from "../models/Product.js";
 import { ShopModel } from "../models/Shop.js";
@@ -213,6 +214,7 @@ export async function checkout(customer: string, body: any) {
           name: product.name,
           quantity: item.quantity,
           unitPrice: product.price,
+          imageUrl: product.imageUrl,
           substitutionPreference: item.substitute?.enabled ? item.substitute.desc : undefined,
         });
       }
@@ -241,6 +243,16 @@ export async function checkout(customer: string, body: any) {
             checkoutKey: body.checkoutKey,
             pickupNote: body.pickupNote,
             paymentMethod: body.paymentMethod,
+            paymentStatus: 'pending',
+            pickupCode: String(randomInt(100000, 1000000)),
+            pickupPassToken: randomBytes(24).toString('hex'),
+            timeline: [{
+              event: 'order-received',
+              label: 'Order Received',
+              description: 'Your order was received successfully.',
+              actor: 'system',
+              occurredAt: new Date(),
+            }],
           },
         ],
         { session },
@@ -258,5 +270,5 @@ export async function checkout(customer: string, body: any) {
   } finally {
     await session.endSession();
   }
-  return { id: result.id, status: result.status, total: result.total };
+  return { id: result.id, status: result.status, total: result.total, pickupCode: result.pickupCode };
 }

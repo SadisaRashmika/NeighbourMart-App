@@ -22,14 +22,12 @@ export default function CustomerDashboard() {
 
   useEffect(() => {
     if (isShopDataVisible && shops.length === 0) {
-      setLoadingShops(true);
       getShops().then(setShops).catch(console.error).finally(() => setLoadingShops(false));
     }
-  }, [isShopDataVisible]);
+  }, [isShopDataVisible, shops.length]);
 
   useEffect(() => {
     if (selectedShop) {
-      setLoadingProducts(true);
       getProducts(selectedShop.id).then(setProducts).catch(console.error).finally(() => setLoadingProducts(false));
     }
   }, [selectedShop]);
@@ -47,7 +45,7 @@ export default function CustomerDashboard() {
       <ScrollView contentContainerStyle={styles.content}>
         
         <View style={styles.topCardsRow}>
-          <TouchableOpacity style={styles.squareShopCard} onPress={() => setShopDataVisible(true)}>
+          <TouchableOpacity style={styles.squareShopCard} onPress={() => { if (shops.length === 0) setLoadingShops(true); setShopDataVisible(true); }}>
             <ImageBackground source={require('../../../../assets/images/img4.jpg')} style={styles.bgImage} imageStyle={styles.bgImageStyle}>
               <View style={styles.overlay}>
                 <View style={styles.textPill}>
@@ -90,6 +88,7 @@ export default function CustomerDashboard() {
                     key={shop.id} 
                     style={[styles.shopCard, selectedShop?.id === shop.id && { borderColor: '#138A43', backgroundColor: '#EAF7F0' }]}
                     onPress={() => {
+                      setLoadingProducts(true);
                       setSelectedShop(shop);
                       setShopDataVisible(false);
                     }}
