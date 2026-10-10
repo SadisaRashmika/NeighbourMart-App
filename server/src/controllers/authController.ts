@@ -32,8 +32,8 @@ function createToken(userId: string, purpose: 'session' | 'email-verification') 
   return jwt.sign({ purpose }, environment.jwtSecret, { subject: userId, expiresIn: purpose === 'session' ? '7d' : '15m' });
 }
 
-function publicUser(user: { _id: unknown; name: string; email: string; role: string; location: string; avatarUrl?: string | null; phoneNumber?: string | null; pickupTime?: string | null; pickupInstructions?: string | null; allowCalls?: boolean }) {
-  return { id: String(user._id), name: user.name, email: user.email, role: user.role, location: user.location, avatarUrl: user.avatarUrl, phoneNumber: user.phoneNumber, pickupTime: user.pickupTime, pickupInstructions: user.pickupInstructions, allowCalls: user.allowCalls };
+function publicUser(user: { _id: unknown; name: string; email: string; role: string; location: string; avatarUrl?: string | null; phoneNumber?: string | null; pickupTime?: string | null; pickupInstructions?: string | null; allowCalls?: boolean; selectedShopId?: unknown }) {
+  return { id: String(user._id), name: user.name, email: user.email, role: user.role, location: user.location, avatarUrl: user.avatarUrl, phoneNumber: user.phoneNumber, pickupTime: user.pickupTime, pickupInstructions: user.pickupInstructions, allowCalls: user.allowCalls, selectedShopId: user.selectedShopId ? String(user.selectedShopId) : undefined };
 }
 
 export const getCurrentUser: RequestHandler = (_request, response) => {

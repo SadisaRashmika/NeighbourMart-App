@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, ImageBackground, TextInput, ActivityIndicator, Image } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, ImageBackground, TextInput, ActivityIndicator, Image, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RoleHeader } from '@/components/common/RoleHeader';
 import { PickupReminderCard } from '@/components/customer/PickupReminderCard';
@@ -8,9 +8,12 @@ import { getShops, getProducts } from '@/features/customer/customerApi';
 import { useRouter } from 'expo-router';
 import type { Shop, Product } from '@/features/customer/customerTypes';
 import { useCart } from '@/features/customer/useCart';
+import { useAuth } from '@/features/auth/useAuth';
+import { updateProfile } from '@/features/auth/authApi';
 
 export default function CustomerDashboard() {
   const router = useRouter();
+  const { user, token, setUser } = useAuth();
   const { addItem } = useCart();
   const [isShopDataVisible, setShopDataVisible] = useState(false);
   const [shops, setShops] = useState<Shop[]>([]);
@@ -19,26 +22,100 @@ export default function CustomerDashboard() {
   const [searchShop, setSearchShop] = useState('');
   const [loadingShops, setLoadingShops] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  
+  const [notification, setNotification] = useState<{ visible: boolean, message: string }>({ visible: false, message: '' });
+  const fadeAnim = useMemo(() => new Animated.Value(0), []);
+  const slideAnim = useMemo(() => new Animated.Value(-100), []);
+
+  const showNotification = (message: string) => {
+    setNotification({ visible: true, message });
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 60, useNativeDriver: true })
+    ]).start(() => {
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+          Animated.spring(slideAnim, { toValue: -100, useNativeDriver: true })
+        ]).start(() => setNotification({ visible: false, message: '' }));
+      }, 2000);
+    });
+  };
+
+  const handleAddItem = (p: Product) => {
+    addItem(p, 1, undefined, selectedShop?.name);
+    showNotification(`Added ${p.name} to cart`);
+  };
 
   useEffect(() => {
-    if (isShopDataVisible && shops.length === 0) {
-      getShops().then(setShops).catch(console.error).finally(() => setLoadingShops(false));
-    }
-  }, [isShopDataVisible, shops.length]);
+    let mounted = true;
+    Promise.resolve().then(() => { if (mounted) setLoadingShops(true); });
+    getShops().then(data => {
+      if (mounted) {
+        setShops(data);
+        if (user?.selectedShopId) {
+          const s = data.find(shop => shop.id === user.selectedShopId);
+          if (s) setSelectedShop((current) => current ?? s);
+        }
+      }
+    }).catch(console.error).finally(() => {
+      if (mounted) setLoadingShops(false);
+    });
+    return () => { mounted = false; };
+  }, [user?.selectedShopId]); // only run initially or when selectedShopId changes externally
 
   useEffect(() => {
     if (selectedShop) {
+      Promise.resolve().then(() => setLoadingProducts(true));
       getProducts(selectedShop.id).then(setProducts).catch(console.error).finally(() => setLoadingProducts(false));
     }
   }, [selectedShop]);
+
+  const onSelectShop = async (shop: Shop) => {
+    setLoadingProducts(true);
+    setSelectedShop(shop);
+    setShopDataVisible(false);
+    if (token && user) {
+      try {
+        const response = await updateProfile(token, {
+          name: user.name,
+          location: user.location,
+          avatarUrl: user.avatarUrl,
+          phoneNumber: user.phoneNumber,
+          pickupTime: user.pickupTime,
+          pickupInstructions: user.pickupInstructions,
+          allowCalls: user.allowCalls,
+          selectedShopId: shop.id
+        });
+        setUser(response.user);
+      } catch (e) {
+        console.error("Failed to save selected shop", e);
+      }
+    }
+  };
 
   const filteredShops = shops.filter(s => 
     s.name.toLowerCase().includes(searchShop.toLowerCase()) || 
     s.address.toLowerCase().includes(searchShop.toLowerCase())
   );
 
+  const filteredProducts = products.filter(p => {
+    const matchesCategory = selectedCategory === 'All' || p.category.toLowerCase() === selectedCategory.toLowerCase();
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+      {notification.visible && (
+        <Animated.View style={[styles.notificationNotch, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          <Ionicons name="checkmark-circle" size={16} color="#fff" />
+          <Text style={styles.notificationText}>{notification.message}</Text>
+        </Animated.View>
+      )}
       <View style={styles.fixedHeader}>
         <RoleHeader role="customer" location="Add your neighborhood" />
       </View>
@@ -87,11 +164,7 @@ export default function CustomerDashboard() {
                   <TouchableOpacity 
                     key={shop.id} 
                     style={[styles.shopCard, selectedShop?.id === shop.id && { borderColor: '#138A43', backgroundColor: '#EAF7F0' }]}
-                    onPress={() => {
-                      setLoadingProducts(true);
-                      setSelectedShop(shop);
-                      setShopDataVisible(false);
-                    }}
+                    onPress={() => onSelectShop(shop)}
                   >
                     <View style={styles.shopHeader}>
                       <View style={[styles.readyDot, { backgroundColor: shop.acceptingOrders ? '#138A43' : '#E11D48' }]} />
@@ -109,20 +182,29 @@ export default function CustomerDashboard() {
         </Modal>
 
         <View style={styles.searchBox}>
-        <Ionicons color="#98A2B3" name="search-outline" size={18} />
-        <Text style={styles.searchText}>Search fresh vegetables, dhal, milk...</Text>
-        <Ionicons color="#98A2B3" name="mic-outline" size={17} />
+          <Ionicons color="#98A2B3" name="search-outline" size={18} />
+          <TextInput
+            placeholder="Search fresh vegetables, dhal, milk..."
+            style={styles.searchText}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <Ionicons color="#98A2B3" name="mic-outline" size={17} />
         </View>
 
-        <View style={styles.quickRow}>
-        <View style={styles.quickChip}><View style={styles.greenDot} /><Text>In Stock only</Text></View>
-        <View style={styles.quickChip}><Ionicons color="#AA7A00" name="pricetag-outline" size={13} /><Text>Special Offers</Text></View>
-        <View style={styles.quickChip}><Ionicons color="#667085" name="flash-outline" size={13} /><Text>Fast Pack</Text></View>
-        </View>
+
 
         <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Categories</Text><Text style={styles.viewAll}>View all</Text></View>
         <View style={styles.categoryRow}>
-        {['All', 'Vegetables', 'Dairy'].map((category, index) => <TouchableOpacity key={category} style={[styles.category, index === 0 && styles.categoryActive]}><Text style={[styles.categoryText, index === 0 && styles.categoryActiveText]}>{category}</Text></TouchableOpacity>)}
+        {['All', 'Vegetables', 'Dairy'].map((category) => (
+          <TouchableOpacity 
+            key={category} 
+            onPress={() => setSelectedCategory(category)}
+            style={[styles.category, selectedCategory === category && styles.categoryActive]}
+          >
+            <Text style={[styles.categoryText, selectedCategory === category && styles.categoryActiveText]}>{category}</Text>
+          </TouchableOpacity>
+        ))}
         </View>
 
         <View style={styles.sectionHeader}>
@@ -135,9 +217,9 @@ export default function CustomerDashboard() {
 
         {loadingProducts ? (
           <ActivityIndicator color="#138A43" style={{ marginTop: 20 }} />
-        ) : products.length > 0 ? (
+        ) : filteredProducts.length > 0 ? (
           <View style={{ gap: 12 }}>
-            {products.map(p => (
+            {filteredProducts.map(p => (
                 <TouchableOpacity 
                   key={p.id} 
                   style={styles.productCard}
@@ -153,7 +235,7 @@ export default function CustomerDashboard() {
                     <Text style={styles.productCategory}>{p.category}</Text>
                     <Text style={styles.productPrice}>LKR {p.price}</Text>
                   </View>
-                  <TouchableOpacity style={styles.addButton} onPress={() => addItem(p, 1, undefined, selectedShop?.name)}>
+                  <TouchableOpacity style={styles.addButton} onPress={() => handleAddItem(p)}>
                     <Ionicons name="add" size={16} color="#fff" />
                   </TouchableOpacity>
                 </TouchableOpacity>
@@ -174,6 +256,29 @@ export default function CustomerDashboard() {
 }
 
 const styles = StyleSheet.create({
+  notificationNotch: {
+    position: 'absolute',
+    top: 0,
+    alignSelf: 'center',
+    backgroundColor: '#007332',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    zIndex: 999,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  notificationText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   safeArea: { backgroundColor: '#F7F9F8', flex: 1 },
   fixedHeader: { backgroundColor: '#F7F9F8', paddingHorizontal: 16, paddingTop: 8 },
   content: { gap: 14, padding: 16, paddingBottom: 34 },
@@ -202,10 +307,6 @@ const styles = StyleSheet.create({
   pickup: { color: '#13753F', fontSize: 12, fontWeight: '700', marginTop: 8 },
   searchBox: { alignItems: 'center', backgroundColor: '#fff', borderColor: '#E2E8F0', borderRadius: 11, borderWidth: 1, flexDirection: 'row', gap: 9, paddingHorizontal: 12, paddingVertical: 12 },
   searchText: { color: '#98A2B3', flex: 1, fontSize: 12 },
-  quickRow: { flexDirection: 'row', gap: 7 },
-  quickChip: { alignItems: 'center', backgroundColor: '#fff', borderColor: '#E4E8EF', borderRadius: 15, borderWidth: 1, flex: 1, flexDirection: 'row', gap: 4, justifyContent: 'center', paddingHorizontal: 5, paddingVertical: 8 },
-  quickChipText: { color: '#475467', fontSize: 10 },
-  greenDot: { backgroundColor: '#138A43', borderRadius: 4, height: 7, width: 7 },
   sectionHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 },
   sectionTitle: { color: '#172B24', fontSize: 15, fontWeight: '800' },
   sectionMeta: { color: '#98A2B3', fontSize: 10, marginTop: 2 },
