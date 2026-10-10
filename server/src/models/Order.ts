@@ -23,11 +23,19 @@ const orderSchema = new Schema(
       enum: ['pending', 'accepted', 'preparing', 'ready', 'picked-up', 'cancelled'],
       default: 'pending',
     },
+    checkoutKey: { type: String },
+    pickupNote: { type: String, maxlength: 300 },
+    paymentMethod: { type: String, enum: ['cash', 'card', 'lankaqr'] },
+    packingFee: { type: Number, default: 0, min: 0 },
+    communityDiscount: { type: Number, default: 0, min: 0 },
+    reservationReleased: { type: Boolean, default: false },
     total: { type: Number, required: true, min: 0 },
     lastStatusUpdateAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
+
+orderSchema.index({ customer: 1, checkoutKey: 1 }, { unique: true, partialFilterExpression: { checkoutKey: { $type: 'string' } } });
 
 export type Order = InferSchemaType<typeof orderSchema>;
 export const OrderModel = model('Order', orderSchema);

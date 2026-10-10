@@ -1,5 +1,6 @@
 import { OrderModel } from '../models/Order.js';
 import { ProductModel } from '../models/Product.js';
+import { mutateCheckoutOrder } from './member2OrderReservations.js';
 
 export function findOrdersByCustomer(customerId: string) {
   return OrderModel.find({ customer: customerId }).sort({ createdAt: -1 }).lean();
@@ -34,9 +35,15 @@ export async function createCounterOrder(shop: { _id: unknown; owner: unknown },
   const total = items.reduce((a, i) => a + i.quantity * i.unitPrice, 0);
   return OrderModel.create({ customer: shop.owner, customerName, shop: shop._id, items, total, status: 'pending' });
 }
-export function setOrderStatus(shopId: string, id: string, uiStatus: string) {
+export async function setOrderStatus(shopId: string, id: string, uiStatus: string) {
+  if (await OrderModel.exists({ _id: id, shop: shopId, checkoutKey: { $type: 'string' } })) {
+    return mutateCheckoutOrder(shopId, id, FROM_UI[uiStatus]);
+  }
   return OrderModel.findOneAndUpdate({ _id: id, shop: shopId }, { status: FROM_UI[uiStatus], lastStatusUpdateAt: new Date() }, { new: true });
 }
-export function removeOrder(shopId: string, id: string) {
+export async function removeOrder(shopId: string, id: string) {
+  if (await OrderModel.exists({ _id: id, shop: shopId, checkoutKey: { $type: 'string' } })) {
+    return mutateCheckoutOrder(shopId, id, undefined, true);
+  }
   return OrderModel.findOneAndDelete({ _id: id, shop: shopId });
 }
