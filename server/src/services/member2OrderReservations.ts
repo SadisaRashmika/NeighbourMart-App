@@ -19,6 +19,9 @@ export async function mutateCheckoutOrder(shopId: string, id: string, status?: s
       if (releasing && !order.reservationReleased && order.status !== 'picked-up') {
         for (const item of order.items) {
           await ProductModel.updateOne({ _id: item.product }, { $inc: { stock: item.quantity }, $set: { lastUpdatedAt: new Date() } }, { session });
+          if (item.substitution?.status === 'pending' && item.substitution.suggestedProduct) {
+            await ProductModel.updateOne({ _id: item.substitution.suggestedProduct }, { $inc: { stock: item.quantity }, $set: { lastUpdatedAt: new Date() } }, { session });
+          }
         }
         await PickupSlotModel.updateOne({ _id: order.pickupSlot, booked: { $gt: 0 } }, { $inc: { booked: -1 } }, { session });
         order.reservationReleased = true;
@@ -27,6 +30,28 @@ export async function mutateCheckoutOrder(shopId: string, id: string, status?: s
         const transitions: Record<string, string[]> = { pending: ['accepted', 'preparing', 'cancelled'], accepted: ['preparing', 'cancelled'], preparing: ['ready', 'cancelled'], ready: ['picked-up', 'cancelled'], 'picked-up': [], cancelled: [] };
         if (status !== order.status && !transitions[order.status]?.includes(status)) {
           throw Object.assign(new Error('Invalid checkout order status transition'), { status: 409 });
+        }
+        if (status === 'ready' && order.items.some((item) => item.substitution?.status === 'pending')) {
+          throw Object.assign(new Error('Resolve pending substitutions before marking this order ready'), { status: 409 });
+        }
+        if (status !== order.status) {
+          const entries: Record<string, { event: string; label: string; description?: string }[]> = {
+            accepted: [{ event: 'shop-accepted', label: 'Accepted by Shopkeeper' }],
+            preparing: [
+              { event: 'shop-accepted', label: 'Accepted by Shopkeeper' },
+              { event: 'packing-started', label: 'Packing Started' },
+            ],
+            ready: [
+              { event: 'items-packed', label: 'Items Packed & Chilled' },
+              { event: 'ready-for-pickup', label: 'Ready at Pickup Counter' },
+            ],
+            cancelled: [{ event: 'cancelled', label: 'Order Cancelled' }],
+          };
+          for (const entry of entries[status] ?? []) {
+            if (!order.timeline.some((item) => item.event === entry.event)) {
+              order.timeline.push({ ...entry, actor: 'shop', occurredAt: new Date() } as any);
+            }
+          }
         }
         order.status = status as typeof order.status;
         order.lastStatusUpdateAt = new Date();

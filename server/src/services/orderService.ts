@@ -16,12 +16,16 @@ export const FROM_UI: Record<string, string> = { new: 'pending', preparing: 'pre
 export function toShopOrderDto(o: {
   _id: unknown; customerName?: string | null; status: string; total: number; createdAt?: Date;
   items: { name: string; quantity: number; unitPrice: number }[];
+  pickupSlot?: unknown; paymentMethod?: string | null; paymentStatus?: string | null;
 }) {
   const id = String(o._id);
   return {
     id, orderNumber: `NM-${id.slice(-4).toUpperCase()}`, customerName: o.customerName || 'Customer',
     status: TO_UI[o.status] ?? 'new', total: o.total, createdAt: o.createdAt,
     items: o.items.map((i) => ({ name: i.name, quantity: i.quantity, unitPrice: i.unitPrice })),
+    pickupSlot: o.pickupSlot, paymentMethod: o.paymentMethod ?? 'cash',
+    paymentStatus: o.paymentStatus ?? (o.status === 'picked-up' ? 'paid' : 'pending'),
+    pendingSubstitutions: o.items.filter((i: any) => i.substitution?.status === 'pending').length,
   };
 }
 

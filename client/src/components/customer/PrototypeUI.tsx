@@ -1,8 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { ComponentProps, PropsWithChildren } from "react";
-import { router } from "expo-router";
 import {
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,

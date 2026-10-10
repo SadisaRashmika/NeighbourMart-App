@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
+import { StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
 import type { ReactNode } from 'react';
 
 type InputProps = TextInputProps & {

@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
+import { router } from 'expo-router';
 import { ActivityIndicator, Alert, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { RoleHeader } from '@/components/common/RoleHeader';
 import { ShopOrderCard } from '@/components/shop/ShopOrderCard';
@@ -28,7 +28,6 @@ export default function ShopOrders() {
 
   const shown = orders.filter((o) => o.status === tab);
   const count = (st: OrderStatus) => orders.filter((o) => o.status === st).length;
-  const live = count('new') + count('preparing');
   const total = products.reduce((a, p) => a + (qty[p.id] ?? 0) * p.price, 0);
 
   async function openForm() {
@@ -80,6 +79,7 @@ export default function ShopOrders() {
             onAdvance={(next) => setStatus(item.id, next)}
             onCancel={() => confirm('Cancel order', `Cancel ${item.orderNumber} for ${item.customerName}?`, () => setStatus(item.id, 'cancelled'))}
             onDelete={() => confirm('Delete order', 'This removes it permanently.', () => remove(item.id))}
+            onDetails={() => router.push({ pathname: '/shop/order-details', params: { id: item.id } })}
           />
         )}
       />

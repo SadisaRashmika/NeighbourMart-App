@@ -3,7 +3,7 @@ import type { OrderStatus, ShopOrder } from '@/features/shop/shopTypes';
 import { ActionButton, Pill, type IconName } from './ShopUI';
 import { T, emojiFor, money, shadow, timeAgo } from './shopTheme';
 
-type Props = { order: ShopOrder; onAdvance: (next: OrderStatus) => void; onCancel: () => void; onDelete: () => void };
+type Props = { order: ShopOrder; onAdvance: (next: OrderStatus) => void; onCancel: () => void; onDelete: () => void; onDetails: () => void };
 
 const NEXT: Partial<Record<OrderStatus, { label: string; to: OrderStatus; icon: IconName }>> = {
   new: { label: 'Accept Order', to: 'preparing', icon: 'checkmark-circle-outline' },
@@ -16,7 +16,7 @@ const STATUS: Record<OrderStatus, { text: string; fg: string; bg: string }> = {
   cancelled: { text: 'Cancelled', fg: T.red, bg: T.redBg },
 };
 
-export function ShopOrderCard({ order, onAdvance, onCancel, onDelete }: Props) {
+export function ShopOrderCard({ order, onAdvance, onCancel, onDelete, onDetails }: Props) {
   const next = NEXT[order.status];
   const closed = order.status === 'completed' || order.status === 'cancelled';
   const st = STATUS[order.status];
@@ -45,9 +45,12 @@ export function ShopOrderCard({ order, onAdvance, onCancel, onDelete }: Props) {
       </View>
 
       <View style={[styles.row, { justifyContent: 'space-between' }]}>
-        <Text style={styles.mute}>Pay at Pickup: <Text style={styles.bold}>Counter Cash</Text></Text>
+        <Text style={styles.mute}>Pay at Pickup: <Text style={styles.bold}>{order.paymentMethod?.toUpperCase() ?? 'CASH'}</Text></Text>
         <Text style={styles.total}>{money(order.total)}</Text>
       </View>
+
+      {(order.pendingSubstitutions ?? 0) > 0 && <Text style={styles.pending}>Customer substitution response pending</Text>}
+      <ActionButton icon="document-text-outline" label="Order Details" onPress={onDetails} tone="soft" />
 
       {next && <ActionButton icon={next.icon} label={next.label} onPress={() => onAdvance(next.to)} />}
       {!closed && (
@@ -75,4 +78,5 @@ const styles = StyleSheet.create({
   total: { color: T.green, fontSize: 20, fontWeight: '800' },
   link: { alignItems: 'center', padding: 4 },
   danger: { color: T.red, fontWeight: '800' },
+  pending: { color: '#92400E', backgroundColor: '#FEF3C7', borderRadius: 9, padding: 9, fontWeight: '800', fontSize: 11 },
 });
