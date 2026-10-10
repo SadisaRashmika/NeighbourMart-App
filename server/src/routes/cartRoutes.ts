@@ -75,6 +75,7 @@ router.get("/items/:productId/replacements", async (req, res) => {
       available: p.available,
       shopId: String(p.shop),
       category: p.category,
+      imageUrl: p.imageUrl,
     })),
   );
 });
