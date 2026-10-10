@@ -14,6 +14,7 @@ export type Product = {
   stock: number;
   category: string;
   imageUrl?: string;
+  shopId?: string;
 };
 
 export type SubstitutePreference = {
@@ -30,6 +31,7 @@ export type CartItem = {
   quantity: number;
   substitute?: SubstitutePreference;
   shopName?: string;
+  needsReplacement?: boolean;
 };
 
 export type CustomerOrder = {

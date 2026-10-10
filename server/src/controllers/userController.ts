@@ -13,15 +13,19 @@ export const updateCurrentUser: RequestHandler = async (request, response) => {
   const pickupTime = String(request.body.pickupTime ?? '').trim();
   const pickupInstructions = String(request.body.pickupInstructions ?? '').trim();
   const allowCalls = Boolean(request.body.allowCalls);
+  const selectedShopId = request.body.selectedShopId || undefined;
 
   if (!name || !location) {
     response.status(400).json({ message: 'Name and location are required' });
     return;
   }
 
+  const updateData: any = { name, location, avatarUrl, phoneNumber, pickupTime, pickupInstructions, allowCalls };
+  if (selectedShopId) updateData.selectedShopId = selectedShopId;
+
   const user = await UserModel.findByIdAndUpdate(
     response.locals.userId,
-    { name, location, avatarUrl, phoneNumber, pickupTime, pickupInstructions, allowCalls },
+    updateData,
     { new: true, runValidators: true },
   ).lean();
 
@@ -30,7 +34,7 @@ export const updateCurrentUser: RequestHandler = async (request, response) => {
     return;
   }
 
-  response.json({ user: { id: String(user._id), name: user.name, email: user.email, location: user.location, role: user.role, avatarUrl: user.avatarUrl, phoneNumber: user.phoneNumber, pickupTime: user.pickupTime, pickupInstructions: user.pickupInstructions, allowCalls: user.allowCalls } });
+  response.json({ user: { id: String(user._id), name: user.name, email: user.email, location: user.location, role: user.role, avatarUrl: user.avatarUrl, phoneNumber: user.phoneNumber, pickupTime: user.pickupTime, pickupInstructions: user.pickupInstructions, allowCalls: user.allowCalls, selectedShopId: user.selectedShopId ? String(user.selectedShopId) : undefined } });
 };
 
 export const deleteCurrentUser: RequestHandler = async (_request, response) => {

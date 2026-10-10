@@ -3,6 +3,7 @@ import express from 'express';
 import { getDatabaseStatus } from './config/database.js';
 import { errorMiddleware } from './middleware/errorMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
+import cartRoutes from './routes/cartRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
@@ -29,6 +30,7 @@ export function createApp() {
   app.use('/api/shops', shopRoutes);
   app.use('/api/products', productRoutes);
   app.use('/api/orders', orderRoutes);
+  app.use('/api/cart', cartRoutes);
   app.use('/api/reports', reportRoutes);
   app.use('/api/reminders', reminderRoutes);
 

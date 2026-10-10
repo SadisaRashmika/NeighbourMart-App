@@ -1,160 +1,488 @@
-import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { RoleHeader } from '@/components/common/RoleHeader';
-import { useCart } from '@/features/customer/useCart';
+import { useCallback } from "react";
+import { router, useFocusEffect } from "expo-router";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import {
+  Badge,
+  cash,
+  colors,
+  ErrorNotice,
+  Icon,
+  p,
+  PrimaryAction,
+  productPhoto,
+  PrototypePage,
+} from "@/components/customer/PrototypeUI";
+import { useCart } from "@/features/customer/useCart";
 
 export default function Cart() {
-  const { items, updateQuantity, removeItem, clearCart } = useCart();
-
-  const totalItems = items.length;
-  const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0);
-
+  const {
+    basket,
+    items,
+    busy,
+    error,
+    refresh,
+    changeQuantity,
+    remove,
+    clearCart,
+  } = useCart();
+  useFocusEffect(
+    useCallback(() => {
+      void refresh().catch(() => undefined);
+    }, [refresh]),
+  );
+  const attempt = (work: Promise<void>) => void work.catch(() => undefined);
+  const units = items.reduce((sum, item) => sum + item.quantity, 0);
+  const pending = items.filter((item) => item.needsReplacement);
+  const choose = (id: string) =>
+    router.push({
+      pathname: "/customer/substitution",
+      params: { productId: id },
+    });
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
-      <View style={styles.header}>
-        <RoleHeader role="customer" location="Add your neighborhood" />
-      </View>
-      
-      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        <View style={styles.listHeader}>
-          <Text style={styles.listTitle}>Your Basket Items</Text>
-          <View style={styles.itemCountPill}>
-            <Text style={styles.itemCountText}>{totalItems} items ({totalUnits} units)</Text>
-          </View>
-          <View style={{ flex: 1 }} />
-          <TouchableOpacity style={styles.clearBtn} onPress={clearCart}>
-            <Ionicons name="trash-outline" size={14} color="#138A43" />
-            <Text style={styles.clearText}>Clear</Text>
-          </TouchableOpacity>
-        </View>
-
-        {items.map(item => (
-          <View key={item.product.id} style={styles.card}>
-            <TouchableOpacity style={styles.closeBtn} onPress={() => removeItem(item.product.id)}>
-              <Ionicons name="close" size={20} color="#9CA3AF" />
-            </TouchableOpacity>
-
-            <View style={styles.cardTop}>
-              <View style={styles.imageBox}>
-                {item.product.imageUrl ? (
-                  <Image source={{ uri: item.product.imageUrl }} style={styles.itemImage} />
-                ) : (
-                  <View style={[styles.itemImage, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6' }]}>
-                    <Ionicons name="image-outline" size={24} color="#9CA3AF" />
-                  </View>
-                )}
-                {item.product.stock <= 5 && (
-                  <View style={styles.lowStockBadge}>
-                    <Text style={styles.lowStockText}>LOW STOCK</Text>
-                  </View>
-                )}
+    <PrototypePage
+      address={basket.shop?.address}
+      refreshing={busy}
+      onRefresh={() => attempt(refresh())}
+    >
+      <ErrorNotice message={error} />
+      {basket.shop && (
+        <>
+          <View style={[p.card, s.shop]}>
+            <View style={s.shopIcon}>
+              <Icon name="storefront-outline" size={28} />
+            </View>
+            <View style={s.grow}>
+              <View style={p.row}>
+                <Text style={p.heading}>
+                  {basket.shop.name.replace(" (Demo)", "")}
+                </Text>
+                <Icon name="checkmark-circle" size={18} />
               </View>
-              
-              <View style={styles.itemDetails}>
-                <Text style={styles.itemName}>{item.product.name}</Text>
-                <Text style={styles.unitPrice}>Per unit: LKR {item.product.price}</Text>
-                
-                <View style={styles.priceRow}>
-                  <View style={styles.stepper}>
-                    <TouchableOpacity style={styles.stepBtn} onPress={() => updateQuantity(item.product.id, -1)}>
-                      <Ionicons name="remove" size={16} color="#111827" />
-                    </TouchableOpacity>
-                    <Text style={styles.stepValue}>{item.quantity}</Text>
-                    <TouchableOpacity style={styles.stepBtn} onPress={() => updateQuantity(item.product.id, 1)}>
-                      <Ionicons name="add" size={16} color="#111827" />
-                    </TouchableOpacity>
-                  </View>
-                  <Text style={styles.totalPrice}>LKR {item.product.price * item.quantity}</Text>
-                </View>
+              <View style={s.pill}>
+                <Text style={s.counter}>Counter pickup</Text>
+              </View>
+              <View style={p.inline}>
+                <Icon name="time-outline" size={14} color="#8A6524" />
+                <Text style={s.pickup}>
+                  Choose your pickup time at checkout
+                </Text>
               </View>
             </View>
-
-            {item.substitute?.enabled && (
-              <View style={[styles.subBox, item.substitute.type === 'manual' ? styles.subBoxYellow : styles.subBoxGray]}>
-                <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                  <Ionicons 
-                    name={item.substitute.type === 'manual' ? "notifications-outline" : "sync-circle-outline"} 
-                    size={16} 
-                    color={item.substitute.type === 'manual' ? "#92400E" : "#138A43"} 
-                    style={{ marginTop: 2, marginRight: 6 }}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.subTitle}>
-                      <Text style={{ fontWeight: '700' }}>Substitute: </Text>
-                      {item.substitute.title}
-                    </Text>
-                    <View style={styles.subDescRow}>
-                      {item.substitute.type === 'auto' && (
-                        <View style={[styles.subDot, { backgroundColor: item.substitute.descType === 'success' ? '#138A43' : '#6B7280' }]} />
-                      )}
-                      <Text style={[styles.subDesc, item.substitute.type === 'manual' && { color: '#92400E' }, item.substitute.descType === 'success' && { color: '#138A43' }]}>
-                        {item.substitute.desc}
-                      </Text>
-                    </View>
-                  </View>
-                  <TouchableOpacity>
-                    <Text style={[styles.subEdit, item.substitute.type === 'manual' && { color: '#92400E' }]}>
-                      {item.substitute.type === 'manual' ? 'Modify' : 'Edit'}
-                    </Text>
-                  </TouchableOpacity>
+          </View>
+          <View style={p.row}>
+            <View style={p.inline}>
+              <Icon name="bag-handle-outline" size={15} />
+              <Text style={s.meta}>Self-Pickup at Counter</Text>
+            </View>
+            <Text style={s.metaMuted}>Cash / LANKAQR</Text>
+          </View>
+        </>
+      )}
+      {!!pending.length && (
+        <View style={s.inventory}>
+          <View style={s.inventoryIcon}>
+            <Icon name="archive-outline" size={20} color="#865C13" />
+          </View>
+          <View style={s.grow}>
+            <Text style={s.inventoryTitle}>INVENTORY UPDATE ●</Text>
+            <Text style={s.inventoryText}>
+              Notice: {pending[0].product.name} is unavailable. Please review a
+              substitute.
+            </Text>
+          </View>
+        </View>
+      )}
+      <View style={p.row}>
+        <View style={[p.inline, { flex: 1, flexWrap: "wrap" }]}>
+          <Text style={p.heading}>Your Basket Items</Text>
+          <Badge label={`${items.length} items (${units} units)`} />
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          disabled={busy || !items.length}
+          style={p.linkTouch}
+          onPress={() =>
+            Alert.alert("Clear basket?", "Remove all groceries?", [
+              { text: "Keep items", style: "cancel" },
+              {
+                text: "Clear",
+                style: "destructive",
+                onPress: () => attempt(clearCart()),
+              },
+            ])
+          }
+        >
+          <View style={p.inline}>
+            <Icon name="trash-outline" size={15} />
+            <Text style={p.link}>Clear</Text>
+          </View>
+        </Pressable>
+      </View>
+      {!items.length && (
+        <View style={p.card}>
+          <Text style={p.heading}>Your basket is empty</Text>
+          <Text style={p.text}>
+            Add groceries from your local shop to get started.
+          </Text>
+          <PrimaryAction
+            label="Browse groceries"
+            icon="cart-outline"
+            onPress={() => router.navigate("/customer/dashboard")}
+          />
+        </View>
+      )}
+      {items.map((item) => (
+        <View style={p.card} key={item.product.id}>
+          <View style={s.productRow}>
+            <View style={s.photoWrap}>
+              <Image source={productPhoto(item.product)} style={s.photo} />
+              {item.needsReplacement && (
+                <Text style={s.lowStock}>LOW STOCK</Text>
+              )}
+            </View>
+            <View style={s.grow}>
+              <View style={p.row}>
+                <Text style={[p.name, s.grow]}>{item.product.name}</Text>
+                <Pressable
+                  accessibilityLabel={`Remove ${item.product.name}`}
+                  accessibilityRole="button"
+                  disabled={busy}
+                  onPress={() => attempt(remove(item.product.id))}
+                  style={s.close}
+                >
+                  <Icon name="close" size={19} color="#8A948B" />
+                </Pressable>
+              </View>
+              <Text style={p.tiny}>Per unit: {cash(item.product.price)}</Text>
+              <View style={[p.row, { marginTop: 12 }]}>
+                <View style={s.stepper}>
+                  <Pressable
+                    accessibilityLabel={`Decrease ${item.product.name} quantity`}
+                    accessibilityRole="button"
+                    disabled={busy || item.quantity <= 1}
+                    style={s.step}
+                    onPress={() =>
+                      attempt(
+                        changeQuantity(item.product.id, item.quantity - 1),
+                      )
+                    }
+                  >
+                    <Icon
+                      name="remove"
+                      size={17}
+                      color={item.quantity <= 1 ? "#ABB0AB" : colors.ink}
+                    />
+                  </Pressable>
+                  <Text style={s.quantity}>{item.quantity}</Text>
+                  <Pressable
+                    accessibilityLabel={`Increase ${item.product.name} quantity`}
+                    accessibilityRole="button"
+                    disabled={
+                      busy ||
+                      item.quantity >= Math.min(99, item.product.stock ?? 99)
+                    }
+                    style={s.step}
+                    onPress={() =>
+                      attempt(
+                        changeQuantity(item.product.id, item.quantity + 1),
+                      )
+                    }
+                  >
+                    <Icon name="add" size={17} color={colors.ink} />
+                  </Pressable>
                 </View>
+                <Text style={p.price}>
+                  {cash(item.quantity * item.product.price)}
+                </Text>
+              </View>
+            </View>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Edit substitution for ${item.product.name}`}
+            disabled={busy}
+            onPress={() => choose(item.product.id)}
+            style={[s.substitution, item.needsReplacement && s.pending]}
+          >
+            <Icon
+              name={
+                item.needsReplacement
+                  ? "notifications-outline"
+                  : "sync-circle-outline"
+              }
+              size={17}
+              color={item.needsReplacement ? "#8A6524" : colors.green}
+            />
+            <View style={s.grow}>
+              <Text style={s.subTitle}>
+                Substitute:{" "}
+                {item.needsReplacement
+                  ? "Allowed with approval"
+                  : "Choose an alternative"}
+              </Text>
+              <Text
+                style={[
+                  p.tiny,
+                  { color: item.needsReplacement ? "#8A6524" : colors.green },
+                ]}
+              >
+                {item.needsReplacement
+                  ? "Review available replacements before checkout."
+                  : "You approve every change before ordering."}
+              </Text>
+            </View>
+            <Text
+              style={[p.link, item.needsReplacement && { color: "#8A6524" }]}
+            >
+              {item.needsReplacement ? "Modify" : "Edit"}
+            </Text>
+          </Pressable>
+        </View>
+      ))}
+      {!!items.length && (
+        <>
+          <View style={p.info}>
+            <View style={[p.circle, { backgroundColor: colors.green }]}>
+              <Icon name="bag-handle-outline" color="#FFFFFF" />
+            </View>
+            <View style={s.grow}>
+              <Text style={p.name}>Pack Fresh on Arrival</Text>
+              <Text style={p.text}>
+                Collect fresh groceries at your selected pickup time.
+              </Text>
+            </View>
+          </View>
+          <View style={p.card}>
+            <View style={p.row}>
+              <Text style={p.heading}>Payment &amp; Order Summary</Text>
+              <Icon name="receipt-outline" />
+            </View>
+            <View style={p.row}>
+              <Text style={p.text}>Items Subtotal ({units} items)</Text>
+              <Text style={s.amount}>
+                {cash(
+                  basket.subtotal ??
+                    items.reduce(
+                      (sum, i) => sum + i.quantity * i.product.price,
+                      0,
+                    ),
+                )}
+              </Text>
+            </View>
+            <View style={p.row}>
+              <Text style={p.text}>Shop Packing Fee ⓘ</Text>
+              <Text style={s.amount}>{cash(basket.packingFee ?? 0)}</Text>
+            </View>
+            <View style={p.row}>
+              <Text style={[p.text, { color: colors.green }]}>
+                Store Discount (Community Perk)
+              </Text>
+              <Text style={[s.amount, { color: colors.green }]}>
+                −{cash(basket.communityDiscount ?? 0)}
+              </Text>
+            </View>
+            {!!pending.length && (
+              <View style={s.summaryPending}>
+                <Text style={p.tiny}>Substitutions Pending:</Text>
+                <Text style={s.pendingAmount}>
+                  {pending.length} item may adjust
+                </Text>
               </View>
             )}
+            <View style={s.total}>
+              <View>
+                <Text style={p.heading}>Estimated Total</Text>
+                <Text style={p.tiny}>Pay at store counter</Text>
+              </View>
+              <Text style={s.totalPrice}>{cash(basket.total)}</Text>
+            </View>
+            <View style={s.settlement}>
+              <Icon name="qr-code-outline" size={17} />
+              <Text style={s.settlementText}>Counter Settlement:</Text>
+              <Icon name="cash-outline" size={15} />
+              <Text style={p.tiny}>Cash</Text>
+              <Text style={p.tiny}>|</Text>
+              <Icon name="qr-code-outline" size={14} />
+              <Text style={p.tiny}>LANKAQR</Text>
+            </View>
           </View>
-        ))}
-
-        {items.length === 0 && (
-          <View style={{ alignItems: 'center', marginTop: 40 }}>
-            <Ionicons name="cart-outline" size={48} color="#D1D5DB" />
-            <Text style={{ color: '#6B7280', marginTop: 12 }}>Your basket is empty</Text>
-          </View>
-        )}
-        
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </SafeAreaView>
+          <PrimaryAction
+            label="Proceed to Select Pickup Time →"
+            disabled={busy || !!pending.length}
+            onPress={() => router.push("/customer/pickup-time")}
+          />
+          {!!pending.length && (
+            <Text style={s.hint}>
+              Approve or remove unavailable items to continue.
+            </Text>
+          )}
+          <Pressable
+            accessibilityRole="button"
+            style={s.addMore}
+            onPress={() => router.navigate("/customer/dashboard")}
+          >
+            <Icon name="cart-outline" size={19} />
+            <Text style={p.name}>Add More Items</Text>
+          </Pressable>
+        </>
+      )}
+      {busy && <ActivityIndicator color={colors.green} />}
+    </PrototypePage>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: { backgroundColor: '#F9FAFB', flex: 1 },
-  header: { paddingHorizontal: 16, paddingTop: 8, backgroundColor: '#F9FAFB' },
-  body: { padding: 16 },
-  
-  listHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, marginTop: 4 },
-  listTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  itemCountPill: { backgroundColor: '#D1FAE5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginLeft: 8 },
-  itemCountText: { fontSize: 11, fontWeight: '700', color: '#047857' },
-  clearBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  clearText: { color: '#138A43', fontSize: 12, fontWeight: '700' },
-  
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, position: 'relative', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-  closeBtn: { position: 'absolute', top: 12, right: 12, zIndex: 1, padding: 4 },
-  
-  cardTop: { flexDirection: 'row', gap: 16 },
-  imageBox: { width: 70, height: 70, position: 'relative', borderRadius: 8, backgroundColor: '#F3F4F6' },
-  itemImage: { width: '100%', height: '100%', resizeMode: 'cover', borderRadius: 8 },
-  lowStockBadge: { position: 'absolute', bottom: -6, left: -4, right: -4, backgroundColor: '#F59E0B', borderRadius: 4, paddingVertical: 2, alignItems: 'center' },
-  lowStockText: { fontSize: 9, fontWeight: '800', color: '#fff' },
-  
-  itemDetails: { flex: 1, paddingRight: 20 },
-  itemName: { fontSize: 15, fontWeight: '700', color: '#111827', marginBottom: 2 },
-  unitPrice: { fontSize: 12, color: '#6B7280' },
-  
-  priceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
-  stepper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 20, padding: 2 },
-  stepBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderRadius: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 1, elevation: 1 },
-  stepValue: { width: 32, textAlign: 'center', fontSize: 14, fontWeight: '700', color: '#111827' },
-  totalPrice: { fontSize: 15, fontWeight: '800', color: '#138A43' },
-  
-  subBox: { marginTop: 16, padding: 12, borderRadius: 12 },
-  subBoxGray: { backgroundColor: '#F3F4F6' },
-  subBoxYellow: { backgroundColor: '#FEF3C7' },
-  subTitle: { fontSize: 12, color: '#111827', marginBottom: 2 },
-  subDescRow: { flexDirection: 'row', alignItems: 'center' },
-  subDot: { width: 4, height: 4, borderRadius: 2, marginRight: 4 },
-  subDesc: { fontSize: 11, color: '#6B7280' },
-  subEdit: { fontSize: 12, fontWeight: '700', color: '#138A43' },
+const s = StyleSheet.create({
+  grow: { flex: 1 },
+  shop: { flexDirection: "row", alignItems: "center", gap: 13 },
+  shopIcon: {
+    width: 74,
+    height: 80,
+    backgroundColor: "#E6F1E9",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pill: {
+    alignSelf: "flex-start",
+    backgroundColor: "#EDEBFF",
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    marginVertical: 5,
+  },
+  counter: { color: colors.green, fontSize: 11, fontWeight: "600" },
+  pickup: { color: "#8A6524", fontSize: 11, fontWeight: "600", flex: 1 },
+  meta: { fontSize: 10, color: colors.ink },
+  metaMuted: { fontSize: 10, color: colors.muted },
+  inventory: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#FFEBD8",
+    padding: 12,
+    borderRadius: 13,
+  },
+  inventoryIcon: {
+    backgroundColor: "#FFBD39",
+    width: 33,
+    height: 33,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  inventoryTitle: {
+    fontSize: 10,
+    color: "#775216",
+    fontWeight: "800",
+    marginBottom: 3,
+  },
+  inventoryText: { fontSize: 11, color: "#78572A", lineHeight: 15 },
+  productRow: { flexDirection: "row", gap: 13, alignItems: "center" },
+  photoWrap: {
+    width: 65,
+    height: 76,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  photo: { width: 61, height: 72, resizeMode: "contain" },
+  lowStock: {
+    position: "absolute",
+    bottom: 0,
+    backgroundColor: "#FFB733",
+    color: "#784600",
+    fontSize: 8,
+    paddingHorizontal: 5,
+    paddingVertical: 4,
+    borderRadius: 3,
+    fontWeight: "700",
+  },
+  close: {
+    minWidth: 28,
+    minHeight: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 3,
+    borderRadius: 24,
+    backgroundColor: "#F2F0FA",
+  },
+  step: {
+    width: 31,
+    height: 31,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quantity: {
+    minWidth: 17,
+    textAlign: "center",
+    fontWeight: "600",
+    fontSize: 12,
+    color: colors.ink,
+  },
+  substitution: {
+    flexDirection: "row",
+    gap: 5,
+    alignItems: "center",
+    backgroundColor: "#F1EFFA",
+    padding: 9,
+    borderRadius: 8,
+    minHeight: 47,
+  },
+  pending: { backgroundColor: "#FFF7E9" },
+  subTitle: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.ink,
+    marginBottom: 3,
+  },
+  amount: { fontSize: 12, fontWeight: "600", color: colors.ink },
+  summaryPending: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#F4F1FB",
+    borderRadius: 8,
+    padding: 8,
+  },
+  pendingAmount: { fontSize: 10, color: "#8A6524", fontWeight: "700" },
+  total: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderTopWidth: 1,
+    borderTopColor: "#EEEFF2",
+    paddingTop: 12,
+  },
+  totalPrice: { fontSize: 24, fontWeight: "700", color: colors.green },
+  settlement: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#F3F1FA",
+    borderRadius: 7,
+    padding: 8,
+  },
+  settlementText: { fontSize: 10, fontWeight: "600", color: colors.ink },
+  addMore: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    minHeight: 48,
+    flexDirection: "row",
+    gap: 7,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  hint: { color: "#8A6524", fontSize: 11, textAlign: "center" },
 });
