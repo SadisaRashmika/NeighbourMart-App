@@ -42,7 +42,7 @@ export function setPassword(input: { email: string; password: string; verificati
   });
 }
 
-export function updateProfile(token: string, input: { name: string; location: string; avatarUrl?: string; phoneNumber?: string; pickupTime?: string; pickupInstructions?: string; allowCalls?: boolean }) {
+export function updateProfile(token: string, input: { name: string; location: string; avatarUrl?: string; phoneNumber?: string; pickupTime?: string; pickupInstructions?: string; allowCalls?: boolean; selectedShopId?: string }) {
   return apiRequest<{ user: AuthUser }>('/api/users/me', {
     body: JSON.stringify(input),
     headers: { Authorization: `Bearer ${token}` },
