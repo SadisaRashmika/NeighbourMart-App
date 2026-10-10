@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,8 +16,6 @@ export default function ShopDashboard() {
   const name = d.shop?.name ?? 'My shop';
   const initials = name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
   const accepting = d.shop?.acceptingOrders ?? false;
-  const values = d.report?.values ?? [];
-  const max = Math.max(1, ...values);
   const isLow = (itemName: string) => d.items.some((p) => p.name === itemName && stockState(p) !== 'in');
   const s = styles;
 

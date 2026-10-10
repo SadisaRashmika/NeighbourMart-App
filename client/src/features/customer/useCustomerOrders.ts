@@ -21,7 +21,7 @@ export function useCustomerOrders() {
   }, []);
 
   useEffect(() => {
-    void reload();
+    Promise.resolve().then(() => void reload());
   }, [reload]);
 
   const clearOrders = useCallback(() => setOrders([]), []);

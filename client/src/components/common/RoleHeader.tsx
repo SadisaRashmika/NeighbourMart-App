@@ -21,7 +21,7 @@ export function RoleHeader({ role, location = 'Your neighborhood' }: RoleHeaderP
           <Text style={styles.brand}>Neighbour<Text style={styles.brandAccent}>Mart</Text></Text>
         </View>
         <View style={styles.actions}>
-          <TouchableOpacity accessibilityLabel="Notifications" onPress={() => router.push('/customer/notifications')}>
+          <TouchableOpacity accessibilityLabel="Notifications" onPress={() => router.push('/customer/notifications' as never)}>
             <Ionicons color="#172B24" name="notifications-outline" size={20} />
           </TouchableOpacity>
           <TouchableOpacity 

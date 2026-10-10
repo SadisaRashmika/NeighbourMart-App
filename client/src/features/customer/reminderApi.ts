@@ -9,7 +9,7 @@ export function getPickupReminder(token: string) {
   });
 }
 
-export function savePickupReminder(token: string, items: Array<Pick<ReminderItem, 'name' | 'quantity'> | ReminderItem>) {
+export function savePickupReminder(token: string, items: (Pick<ReminderItem, 'name' | 'quantity'> | ReminderItem)[]) {
   return apiRequest<{ reminder: PickupReminder }>('/api/reminders/me', {
     body: JSON.stringify({ items }),
     headers: { Authorization: `Bearer ${token}` },

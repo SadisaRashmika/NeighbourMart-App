@@ -1,10 +1,70 @@
-import { EmptyState } from '@/components/common/EmptyState';
+import { Ionicons } from '@expo/vector-icons';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { RoleHeader } from '@/components/common/RoleHeader';
+import { completeOrderHandoff, confirmOrderPayment, getShopOrder, getStockItems, proposeOrderSubstitution, updateOrderStatus, verifyOrderPickup } from '@/features/shop/shopApi';
+import type { ShopOrderDetails, StockItem } from '@/features/shop/shopTypes';
 
-export default function ShopOrderDetails() {
-  return (
-    <EmptyState
-      description="Detailed customer order information and processing actions belong here."
-      title="Shop Order Details"
-    />
-  );
+const money = (value: number) => `LKR ${value.toLocaleString('en-LK')}`;
+export default function ShopOrderDetailsScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [order, setOrder] = useState<ShopOrderDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [pickupValue, setPickupValue] = useState('');
+  const [proposalProduct, setProposalProduct] = useState<string | null>(null);
+  const [products, setProducts] = useState<StockItem[]>([]);
+  const [replacement, setReplacement] = useState('');
+  const [note, setNote] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const scanned = useRef(false);
+  const load = useCallback(async () => { if (!id) return; try { setOrder(await getShopOrder(id)); setError(''); } catch (e) { setError(e instanceof Error ? e.message : 'Unable to load order'); } finally { setLoading(false); } }, [id]);
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    getShopOrder(id).then((value) => { if (active) { setOrder(value); setError(''); } }).catch((e) => { if (active) setError(e instanceof Error ? e.message : 'Unable to load order'); }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [id]);
+  useEffect(() => { if (!order || ['picked-up', 'cancelled'].includes(order.status)) return; const timer = setInterval(() => void load(), 10000); return () => clearInterval(timer); }, [order, load]);
+  const run = async (work: () => Promise<unknown>) => { setBusy(true); setError(''); try { await work(); await load(); } catch (e) { setError(e instanceof Error ? e.message : 'Action failed'); } finally { setBusy(false); } };
+  const openProposal = async (productId: string) => { setProposalProduct(productId); setReplacement(''); setNote(''); try { setProducts((await getStockItems()).filter((item) => item.available && item.stock > 0 && item.id !== productId)); } catch (e) { setError(e instanceof Error ? e.message : 'Unable to load replacements'); } };
+  const selectedItem = order?.items.find((item) => item.productId === proposalProduct);
+  const alternatives = products.filter((product) => !selectedItem?.category || product.category === selectedItem.category);
+  const openScanner = async () => {
+    const permission = cameraPermission?.granted ? cameraPermission : await requestCameraPermission();
+    if (!permission.granted) { setError('Camera permission is required to scan a pickup pass. You can still enter the six-digit code.'); return; }
+    scanned.current = false; setScannerOpen(true);
+  };
+  const scan = (data: string) => {
+    if (scanned.current) return; scanned.current = true; setScannerOpen(false);
+    let value = data;
+    try { value = new URL(data).searchParams.get('token') || data; } catch { /* manual QR values are accepted as-is */ }
+    void run(() => verifyOrderPickup(order!.id, value));
+  };
+
+  if (loading) return <ActivityIndicator color="#138A43" size="large" style={styles.center} />;
+  if (!order) return <View style={styles.center}><Text style={styles.errorText}>{error || 'Order not found'}</Text></View>;
+  return <SafeAreaView edges={['top', 'left', 'right']} style={styles.safe}><View style={styles.header}><RoleHeader role="shop" location={`Order #${order.orderNumber}`} /></View><ScrollView contentContainerStyle={styles.content}>
+    {error ? <Pressable onPress={() => void load()} style={styles.error}><Text style={styles.errorText}>{error} · Tap to refresh</Text></Pressable> : null}
+    <View style={styles.hero}><View><Text style={styles.number}>#{order.orderNumber}</Text><Text style={styles.customer}>{order.customerName}</Text>{order.customerPhone ? <Text style={styles.muted}>{order.customerPhone}</Text> : null}</View><View style={styles.status}><Text style={styles.statusText}>{order.status.toUpperCase()}</Text></View></View>
+    <View style={styles.card}><Text style={styles.title}>Pickup details</Text>{order.pickupSlot ? <Text style={styles.strong}>{new Date(order.pickupSlot.date).toLocaleDateString('en-LK', { weekday: 'long', month: 'short', day: 'numeric' })} · {order.pickupSlot.startTime}–{order.pickupSlot.endTime}</Text> : <Text style={styles.muted}>Counter order</Text>}<Text style={styles.muted}>{order.pickupNote || 'No special pickup instructions'}</Text></View>
+    <View style={styles.card}><Text style={styles.title}>Packing checklist</Text>{order.items.map((item) => <View key={item.productId} style={styles.item}><View style={{ flex: 1 }}><Text style={styles.strong}>{item.quantity}× {item.name}</Text><Text style={styles.muted}>{money(item.unitPrice)} each · {item.substitutionPreference || 'Standard substitution preference'}</Text>{item.substitution?.status && item.substitution.status !== 'none' ? <Text style={styles.sub}>Substitution: {item.substitution.status}{item.substitution.suggestedName ? ` · ${item.substitution.suggestedName}` : ''}</Text> : null}</View><Text style={styles.amount}>{money(item.lineTotal)}</Text>{['accepted', 'preparing'].includes(order.status) && item.substitution?.status !== 'pending' && <Pressable onPress={() => void openProposal(item.productId)}><Text style={styles.link}>Replace</Text></Pressable>}</View>)}</View>
+    {order.pendingSubstitutions > 0 && <View style={styles.warning}><Ionicons name="time-outline" size={21} color="#92400E" /><View style={{ flex: 1 }}><Text style={styles.warningTitle}>Waiting for customer approval</Text><Text style={styles.muted}>Ready status is blocked until all substitutions are resolved.</Text></View></View>}
+    <View style={styles.card}><Text style={styles.title}>Payment</Text><View style={styles.row}><Text style={styles.muted}>Method</Text><Text style={styles.strong}>{order.paymentMethod.toUpperCase()}</Text></View><View style={styles.row}><Text style={styles.muted}>Status</Text><Text style={styles.strong}>{order.paymentStatus.toUpperCase()}</Text></View><View style={styles.row}><Text style={styles.title}>Total</Text><Text style={styles.total}>{money(order.total)}</Text></View></View>
+    {order.status === 'pending' && <Action label="Accept Order & Start Packing" icon="checkmark-circle" disabled={busy} onPress={() => void run(() => updateOrderStatus(order.id, 'preparing'))} />}
+    {['accepted', 'preparing'].includes(order.status) && <Action label="Mark Ready for Pickup" icon="bag-check" disabled={busy || order.pendingSubstitutions > 0} onPress={() => void run(() => updateOrderStatus(order.id, 'ready'))} />}
+    {order.status === 'ready' && <View style={styles.card}><Text style={styles.title}>Pickup verification & handoff</Text><TextInput value={pickupValue} onChangeText={setPickupValue} placeholder="Enter 6-digit code or QR token" placeholderTextColor="#98A2B3" style={styles.input} autoCapitalize="none" /><Action label={order.pickupVerifiedAt ? 'Pickup Pass Verified' : 'Verify Pickup Pass'} icon={order.pickupVerifiedAt ? 'shield-checkmark' : 'keypad'} disabled={busy || Boolean(order.pickupVerifiedAt) || !pickupValue.trim()} onPress={() => void run(() => verifyOrderPickup(order.id, pickupValue.trim()))} />{!order.pickupVerifiedAt && <Action label="Scan Customer QR Pass" icon="qr-code" disabled={busy} secondary onPress={() => void openScanner()} />}<Action label={order.paymentStatus === 'paid' ? 'Payment Confirmed' : `Confirm ${order.paymentMethod.toUpperCase()} Payment`} icon="cash" disabled={busy || order.paymentStatus === 'paid'} secondary onPress={() => void run(() => confirmOrderPayment(order.id))} /><Action label="Complete Handoff" icon="hand-left" disabled={busy || !order.pickupVerifiedAt || order.paymentStatus !== 'paid'} onPress={() => void run(() => completeOrderHandoff(order.id))} /></View>}
+    <View style={styles.card}><Text style={styles.title}>Activity</Text>{order.timeline.map((event, index) => <View key={`${event.event}-${index}`} style={styles.timeline}><View style={styles.dot} /><View style={{ flex: 1 }}><Text style={styles.strong}>{event.label}</Text><Text style={styles.muted}>{new Date(event.occurredAt).toLocaleString('en-LK')}</Text></View></View>)}</View>
+  </ScrollView>
+  <Modal transparent animationType="slide" visible={Boolean(proposalProduct)} onRequestClose={() => setProposalProduct(null)}><View style={styles.backdrop}><View style={styles.sheet}><View style={styles.row}><Text style={styles.title}>Suggest a replacement</Text><Ionicons name="close" size={24} onPress={() => setProposalProduct(null)} /></View><Text style={styles.muted}>Choose an available item from the same category.</Text><ScrollView style={{ maxHeight: 260 }}>{alternatives.map((product) => <Pressable key={product.id} onPress={() => setReplacement(product.id)} style={[styles.option, replacement === product.id && styles.optionOn]}><View style={{ flex: 1 }}><Text style={styles.strong}>{product.name}</Text><Text style={styles.muted}>{money(product.price)} · {product.stock} available</Text></View>{replacement === product.id && <Ionicons name="checkmark-circle" size={22} color="#138A43" />}</Pressable>)}</ScrollView><TextInput value={note} onChangeText={setNote} placeholder="Optional note for the customer" placeholderTextColor="#98A2B3" style={styles.input} maxLength={300} /><Action label="Send for Approval" icon="swap-horizontal" disabled={!replacement || busy} onPress={() => void run(async () => { await proposeOrderSubstitution(order.id, proposalProduct!, replacement, note); setProposalProduct(null); })} /></View></View></Modal>
+  <Modal animationType="fade" visible={scannerOpen} onRequestClose={() => setScannerOpen(false)}><SafeAreaView style={styles.scanner}><View style={styles.scannerHead}><Text style={styles.scannerTitle}>Scan Pickup Pass</Text><Ionicons name="close" size={28} color="#fff" onPress={() => setScannerOpen(false)} /></View><CameraView style={styles.camera} barcodeScannerSettings={{ barcodeTypes: ['qr'] }} onBarcodeScanned={({ data }: { data: string }) => scan(data)} /><Text style={styles.scannerHint}>Place the customer’s QR code inside the camera frame.</Text></SafeAreaView></Modal>
+  </SafeAreaView>;
 }
+
+function Action({ label, icon, disabled, secondary, onPress }: { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; disabled?: boolean; secondary?: boolean; onPress: () => void }) { return <Pressable disabled={disabled} onPress={onPress} style={[styles.action, secondary && styles.actionSecondary, disabled && { opacity: 0.45 }]}><Ionicons name={icon} size={20} color={secondary ? '#138A43' : '#fff'} /><Text style={[styles.actionText, secondary && { color: '#138A43' }]}>{label}</Text></Pressable>; }
+const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: '#F4F5FB' }, header: { paddingHorizontal: 16, paddingTop: 8 }, content: { padding: 16, paddingBottom: 40, gap: 12 }, center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F4F5FB' }, hero: { backgroundColor: '#E3F6EA', borderRadius: 16, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }, number: { color: '#138A43', fontWeight: '900', fontSize: 13 }, customer: { color: '#172B24', fontWeight: '900', fontSize: 20, marginTop: 5 }, status: { backgroundColor: '#fff', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 6 }, statusText: { color: '#138A43', fontWeight: '900', fontSize: 10 }, card: { backgroundColor: '#fff', borderRadius: 16, padding: 15, gap: 10 }, title: { color: '#172B24', fontWeight: '900', fontSize: 16 }, strong: { color: '#172B24', fontWeight: '800', fontSize: 13 }, muted: { color: '#667085', fontSize: 12, lineHeight: 18 }, item: { borderBottomWidth: 1, borderBottomColor: '#EEF0F4', paddingVertical: 9, gap: 5 }, amount: { color: '#138A43', fontWeight: '900' }, link: { color: '#138A43', fontWeight: '800', paddingTop: 5 }, sub: { color: '#92400E', fontSize: 11, fontWeight: '700', marginTop: 3 }, warning: { backgroundColor: '#FEF3C7', borderRadius: 14, padding: 13, flexDirection: 'row', gap: 9 }, warningTitle: { color: '#92400E', fontWeight: '900' }, row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 }, total: { color: '#138A43', fontSize: 22, fontWeight: '900' }, action: { minHeight: 50, borderRadius: 12, backgroundColor: '#138A43', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12 }, actionSecondary: { backgroundColor: '#EAF7F0', borderWidth: 1, borderColor: '#138A43' }, actionText: { color: '#fff', fontWeight: '900', fontSize: 14 }, input: { borderColor: '#D8DEE8', borderWidth: 1, borderRadius: 10, padding: 12, color: '#172B24', backgroundColor: '#fff' }, timeline: { flexDirection: 'row', gap: 9, alignItems: 'center' }, dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#138A43' }, error: { backgroundColor: '#FEE4E2', borderRadius: 10, padding: 10 }, errorText: { color: '#B42318', textAlign: 'center' }, backdrop: { flex: 1, backgroundColor: '#0007', justifyContent: 'flex-end' }, sheet: { backgroundColor: '#fff', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 18, paddingBottom: 30, gap: 12 }, option: { flexDirection: 'row', alignItems: 'center', padding: 11, borderBottomWidth: 1, borderBottomColor: '#EEF0F4' }, optionOn: { backgroundColor: '#EAF7F0', borderRadius: 10 }, scanner: { flex: 1, backgroundColor: '#101820' }, scannerHead: { minHeight: 64, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, scannerTitle: { color: '#fff', fontSize: 18, fontWeight: '900' }, camera: { flex: 1, margin: 18, borderRadius: 18, overflow: 'hidden' }, scannerHint: { color: '#fff', textAlign: 'center', padding: 24, fontSize: 13 } });

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, ImageBackground, TextInput, ActivityIndicator, Image, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RoleHeader } from '@/components/common/RoleHeader';
@@ -27,8 +27,8 @@ export default function CustomerDashboard() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   
   const [notification, setNotification] = useState<{ visible: boolean, message: string }>({ visible: false, message: '' });
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(-100)).current;
+  const fadeAnim = useMemo(() => new Animated.Value(0), []);
+  const slideAnim = useMemo(() => new Animated.Value(-100), []);
 
   const showNotification = (message: string) => {
     setNotification({ visible: true, message });
@@ -52,13 +52,13 @@ export default function CustomerDashboard() {
 
   useEffect(() => {
     let mounted = true;
-    setLoadingShops(true);
+    Promise.resolve().then(() => { if (mounted) setLoadingShops(true); });
     getShops().then(data => {
       if (mounted) {
         setShops(data);
-        if (user?.selectedShopId && !selectedShop) {
+        if (user?.selectedShopId) {
           const s = data.find(shop => shop.id === user.selectedShopId);
-          if (s) setSelectedShop(s);
+          if (s) setSelectedShop((current) => current ?? s);
         }
       }
     }).catch(console.error).finally(() => {
@@ -69,12 +69,13 @@ export default function CustomerDashboard() {
 
   useEffect(() => {
     if (selectedShop) {
-      setLoadingProducts(true);
+      Promise.resolve().then(() => setLoadingProducts(true));
       getProducts(selectedShop.id).then(setProducts).catch(console.error).finally(() => setLoadingProducts(false));
     }
   }, [selectedShop]);
 
   const onSelectShop = async (shop: Shop) => {
+    setLoadingProducts(true);
     setSelectedShop(shop);
     setShopDataVisible(false);
     if (token && user) {
@@ -121,7 +122,7 @@ export default function CustomerDashboard() {
       <ScrollView contentContainerStyle={styles.content}>
         
         <View style={styles.topCardsRow}>
-          <TouchableOpacity style={styles.squareShopCard} onPress={() => setShopDataVisible(true)}>
+          <TouchableOpacity style={styles.squareShopCard} onPress={() => { if (shops.length === 0) setLoadingShops(true); setShopDataVisible(true); }}>
             <ImageBackground source={require('../../../../assets/images/img4.jpg')} style={styles.bgImage} imageStyle={styles.bgImageStyle}>
               <View style={styles.overlay}>
                 <View style={styles.textPill}>

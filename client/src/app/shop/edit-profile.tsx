@@ -7,12 +7,10 @@ import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { Input } from '@/components/common/Input';
 import { useAuth } from '@/features/auth/useAuth';
 import { getMyShop, updateMyShop } from '@/features/shop/shopApi';
-import type { ShopProfile } from '@/features/shop/shopTypes';
 import { ShopBottomNav } from '@/components/shop/ShopBottomNav';
 
 export default function ShopEditProfile() {
   const { user, setUser } = useAuth();
-  const [shop, setShop] = useState<ShopProfile | null>(null);
   const [ownerName, setOwnerName] = useState(user?.name ?? '');
   const [storeName, setStoreName] = useState('');
   const [category, setCategory] = useState('');
@@ -23,15 +21,14 @@ export default function ShopEditProfile() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    getMyShop().then((result) => { setShop(result); setStoreName(result.name); setCategory(result.category ?? ''); setAddress(result.address); setPhone(result.phone ?? ''); }).catch((requestError) => setError(requestError instanceof Error ? requestError.message : 'Could not load shop profile.')).finally(() => setLoading(false));
+    getMyShop().then((result) => { setStoreName(result.name); setCategory(result.category ?? ''); setAddress(result.address); setPhone(result.phone ?? ''); }).catch((requestError) => setError(requestError instanceof Error ? requestError.message : 'Could not load shop profile.')).finally(() => setLoading(false));
   }, []);
 
   async function saveProfile() {
     if (!ownerName.trim() || !storeName.trim() || !category.trim() || !address.trim() || !phone.trim()) { setError('Complete all profile fields before saving.'); return; }
     setError(''); setSaving(true);
     try {
-      const result = await updateMyShop({ ownerName: ownerName.trim(), name: storeName.trim(), category: category.trim(), address: address.trim(), phone: phone.trim() });
-      setShop(result);
+      await updateMyShop({ ownerName: ownerName.trim(), name: storeName.trim(), category: category.trim(), address: address.trim(), phone: phone.trim() });
       if (user) setUser({ ...user, name: ownerName.trim() });
       router.back();
     } catch (requestError) { setError(requestError instanceof Error ? requestError.message : 'Could not update shop profile.'); } finally { setSaving(false); }

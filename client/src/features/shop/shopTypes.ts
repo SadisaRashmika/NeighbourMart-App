@@ -8,6 +8,34 @@ export type ShopOrder = {
   total: number;
   createdAt?: string;
   items: { name: string; quantity: number; unitPrice: number }[];
+  pickupSlot?: { id: string; date: string; startTime: string; endTime: string } | null;
+  paymentMethod?: 'cash' | 'card' | 'lankaqr';
+  paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
+  pendingSubstitutions?: number;
+};
+
+export type ShopOrderDetails = {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  customerPhone?: string;
+  status: 'pending' | 'accepted' | 'preparing' | 'ready' | 'picked-up' | 'cancelled';
+  total: number;
+  subtotal: number;
+  packingFee: number;
+  communityDiscount: number;
+  paymentMethod: 'cash' | 'card' | 'lankaqr';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  pickupNote?: string;
+  pickupVerifiedAt?: string;
+  pendingSubstitutions: number;
+  pickupSlot?: { id: string; date: string; startTime: string; endTime: string } | null;
+  items: {
+    productId: string; category?: string; name: string; imageUrl?: string; quantity: number; unitPrice: number; lineTotal: number;
+    substitutionPreference?: string;
+    substitution?: { status: 'none' | 'pending' | 'approved' | 'rejected' | 'expired'; suggestedName?: string; shopkeeperNote?: string };
+  }[];
+  timeline: { event: string; label: string; description?: string; occurredAt: string }[];
 };
 
 export type StockItem = {
