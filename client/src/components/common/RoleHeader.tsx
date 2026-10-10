@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '@/features/auth/useAuth';
+import { router } from 'expo-router';
 
 type RoleHeaderProps = {
   role: 'customer' | 'shop';
@@ -20,9 +21,15 @@ export function RoleHeader({ role, location = 'Your neighborhood' }: RoleHeaderP
           <Text style={styles.brand}>Neighbour<Text style={styles.brandAccent}>Mart</Text></Text>
         </View>
         <View style={styles.actions}>
-          <TouchableOpacity accessibilityLabel="Search"><Ionicons color="#172B24" name="search-outline" size={20} /></TouchableOpacity>
-          <TouchableOpacity accessibilityLabel="Notifications"><Ionicons color="#172B24" name="notifications-outline" size={20} /></TouchableOpacity>
-          <View style={styles.profile}>{isCustomer && user?.avatarUrl ? <Image source={{ uri: user.avatarUrl }} style={styles.profileImage} /> : <Ionicons color="#fff" name={isCustomer ? 'person' : 'storefront'} size={16} />}</View>
+          <TouchableOpacity accessibilityLabel="Notifications" onPress={() => router.push('/customer/notifications')}>
+            <Ionicons color="#172B24" name="notifications-outline" size={20} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.profile} 
+            onPress={() => router.push(isCustomer ? '/customer/settings' : '/shop/settings')}
+          >
+            {isCustomer && user?.avatarUrl ? <Image source={{ uri: user.avatarUrl }} style={styles.profileImage} /> : <Ionicons color="#fff" name={isCustomer ? 'person' : 'storefront'} size={16} />}
+          </TouchableOpacity>
         </View>
       </View>
       <View style={styles.locationRow}>

@@ -10,6 +10,7 @@ const userSchema = new Schema(
     pickupTime: { type: String, trim: true },
     pickupInstructions: { type: String, trim: true },
     allowCalls: { type: Boolean, default: false },
+    selectedShopId: { type: Schema.Types.ObjectId, ref: 'Shop' },
     passwordHash: { type: String, select: false },
     emailVerified: { type: Boolean, default: false },
     verificationCodeHash: { type: String, select: false },

@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CustomerFooter } from "./CustomerFooter";
+import { RoleHeader } from "../common/RoleHeader";
 import type { Product } from "@/features/customer/customerTypes";
 
 export const colors = {
@@ -67,62 +68,8 @@ export function PrototypePage({
 }>) {
   return (
     <SafeAreaView style={p.safe} edges={["top", "left", "right"]}>
-      <View style={p.header}>
-        {pickup && (
-          <Pressable
-            accessibilityLabel="Back to basket"
-            onPress={() => router.navigate("/customer/cart")}
-            style={p.headerAction}
-          >
-            <Icon name="arrow-back" color={colors.ink} size={23} />
-          </Pressable>
-        )}
-        <Image source={basketPhoto} style={p.logo} />
-        {pickup ? (
-          <Text style={p.passTitle}>Order Pickup Pass</Text>
-        ) : (
-          <View style={p.headerLocation}>
-            <View style={p.inline}>
-              <Icon name="storefront-outline" size={15} />
-              <Text numberOfLines={1} style={p.location}>
-                {address || "Your neighbourhood shop"}
-              </Text>
-              <Icon name="chevron-down" size={10} color={colors.muted} />
-            </View>
-            <Text style={p.headerSubtitle}>Cart Summary</Text>
-          </View>
-        )}
-        <Pressable
-          accessibilityLabel={
-            pickup ? "Pickup information" : "Browse groceries"
-          }
-          onPress={() =>
-            router.navigate(pickup ? "/customer/cart" : "/customer/dashboard")
-          }
-          style={p.headerAction}
-        >
-          <Icon
-            name={pickup ? "help-circle-outline" : "search-outline"}
-            color={colors.ink}
-            size={23}
-          />
-        </Pressable>
-        {!pickup && (
-          <Pressable
-            accessibilityLabel="View orders"
-            onPress={() => router.navigate("/customer/orders")}
-            style={p.headerAction}
-          >
-            <Icon name="notifications-outline" color={colors.ink} size={22} />
-          </Pressable>
-        )}
-        <Pressable
-          accessibilityLabel="Account settings"
-          onPress={() => router.navigate("/customer/settings")}
-          style={p.profile}
-        >
-          <Icon name="person-outline" color="#FFFFFF" size={20} />
-        </Pressable>
+      <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8, backgroundColor: '#F8F7FF', borderBottomWidth: 1, borderBottomColor: '#F0EFF7' }}>
+        <RoleHeader role="customer" location={address || "Your neighbourhood shop"} />
       </View>
       <ScrollView
         showsVerticalScrollIndicator={false}

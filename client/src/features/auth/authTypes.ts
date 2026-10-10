@@ -10,6 +10,7 @@ export type AuthUser = {
   pickupTime?: string;
   pickupInstructions?: string;
   allowCalls?: boolean;
+  selectedShopId?: string;
   role: UserRole;
 };
 
